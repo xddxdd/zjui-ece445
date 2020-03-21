@@ -1,0 +1,10 @@
+(fp_lib_table
+  (lib (name ece445_Capacitor_SMD)(type KiCad)(uri ${KIPRJMOD}/445_Libs/given_footprint/ece445_Capacitor_SMD.pretty)(options "")(descr ""))
+  (lib (name ece445_Capacitor_THT)(type KiCad)(uri ${KIPRJMOD}/445_Libs/given_footprint/ece445_Capacitor_THT.pretty)(options "")(descr ""))
+  (lib (name ece445_Connector_PinHeader_2.54mm)(type KiCad)(uri ${KIPRJMOD}/445_Libs/given_footprint/ece445_Connector_PinHeader_2.54mm.pretty)(options "")(descr ""))
+  (lib (name ece445_LED_SMD)(type KiCad)(uri ${KIPRJMOD}/445_Libs/given_footprint/ece445_LED_SMD.pretty)(options "")(descr ""))
+  (lib (name ece445_LED_THT)(type KiCad)(uri ${KIPRJMOD}/445_Libs/given_footprint/ece445_LED_THT.pretty)(options "")(descr ""))
+  (lib (name ece445_Resistor_SMD)(type KiCad)(uri ${KIPRJMOD}/445_Libs/given_footprint/ece445_Resistor_SMD.pretty)(options "")(descr ""))
+  (lib (name ece445_Resistor_THT)(type KiCad)(uri ${KIPRJMOD}/445_Libs/given_footprint/ece445_Resistor_THT.pretty)(options "")(descr ""))
+  (lib (name ece445_intro)(type KiCad)(uri ${KIPRJMOD}/445_Libs/ece445_intro.pretty)(options "")(descr ""))  
+)

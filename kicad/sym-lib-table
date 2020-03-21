@@ -1,0 +1,7 @@
+(sym_lib_table
+  (lib (name ece445_intro)(type Legacy)(uri ${KIPRJMOD}/445_Libs/ece445_intro.lib)(options "")(descr ""))
+  (lib (name ece445_device)(type Legacy)(uri ${KIPRJMOD}/445_Libs/given_schematic/device.lib)(options "")(descr ""))
+    (lib (name ece445_power)(type Legacy)(uri ${KIPRJMOD}/445_Libs/given_schematic/power.lib)(options "")(descr ""))
+	(lib (name ece445_Connector_Generic)(type Legacy)(uri ${KIPRJMOD}/445_Libs/given_schematic/Connector_Generic.lib)(options "")(descr ""))
+  
+)

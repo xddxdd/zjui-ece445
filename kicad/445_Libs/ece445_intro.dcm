@@ -1,0 +1,8 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP TPS799
+D 200-mA, Low-Quiescent Current, Ultralow Noise, High-PSRR Low-Dropout Linear Regulator
+F http://www.ti.com/lit/ds/symlink/tps799.pdf
+$ENDCMP
+#
+#End Doc Library
