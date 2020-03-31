@@ -39,6 +39,7 @@ C_SOURCES =  \
 Src/main.c \
 Src/stm32f1xx_it.c \
 Src/stm32f1xx_hal_msp.c \
+Src/run.c \
 Src/sensors/bme680.c \
 Src/sensors/run_bme680.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
