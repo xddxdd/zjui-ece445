@@ -11,52 +11,11 @@ static void bme680_delay(uint32_t period);
 static struct bme680_dev bme680;
 
 int8_t bme680_i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *data, uint16_t len) {
-  int8_t ret;
-  if(HAL_OK != (ret = HAL_I2C_Master_Transmit(&BME680_I2C_INSTANCE, dev_id, &reg_addr, 1, HAL_MAX_DELAY))) {
-      char buf[] = "I2C REC1 _\r\n";
-      const char map[] = "0123456789ABCDEF";
-
-      if(ret < 0) ret = -ret;
-      buf[9] = map[ret];
-      
-      HAL_UART_Transmit(&huart1, buf, 12, HAL_MAX_DELAY);
-      return ret;
-  }
-  if(HAL_OK != (ret = HAL_I2C_Master_Receive(&BME680_I2C_INSTANCE, dev_id, data, len, HAL_MAX_DELAY))) {
-      char buf[] = "I2C REC2 _\r\n";
-      const char map[] = "0123456789ABCDEF";
-
-      if(ret < 0) ret = -ret;
-      buf[9] = map[ret];
-      
-      HAL_UART_Transmit(&huart1, buf, 12, HAL_MAX_DELAY);
-      return ret;
-  }
-  return 0;
+  return HAL_I2C_Mem_Read(&BME680_I2C_INSTANCE, dev_id << 1, reg_addr, 1, data, len, 1000);
 }
 
 int8_t bme680_i2c_write(uint8_t dev_id, uint8_t reg_addr, uint8_t *data, uint16_t len) {
-  int8_t ret;
-  for(uint16_t i = 0; i < len; i++) {
-    char buf[2] = {reg_addr + i, data[i]};
-    if(HAL_OK != (ret = HAL_I2C_Master_Transmit(&BME680_I2C_INSTANCE, dev_id, &buf, 2, HAL_MAX_DELAY))) {
-      char buf[] = "I2C SEND _\r\n";
-      const char map[] = "0123456789ABCDEF";
-
-      if(ret < 0) ret = -ret;
-      buf[9] = map[ret];
-      
-      HAL_UART_Transmit(&huart1, buf, 12, HAL_MAX_DELAY);
-      return ret;
-    }
-  }
-  // if(HAL_OK != (ret = HAL_I2C_Master_Transmit(&BME680_I2C_INSTANCE, dev_id, &reg_addr, 1, HAL_MAX_DELAY))) {
-  //   return ret;
-  // }
-  // if(HAL_OK != (ret = HAL_I2C_Master_Transmit(&BME680_I2C_INSTANCE, dev_id, data, len, HAL_MAX_DELAY))) {
-  //   return ret;
-  // }
-  return 0;
+  return HAL_I2C_Mem_Write(&BME680_I2C_INSTANCE, dev_id << 1, reg_addr, 1, data, len, 1000);
 }
 
 void bme680_delay(uint32_t period) {
@@ -93,7 +52,7 @@ int32_t bme680_create_structure() {
 }
 
 int32_t bme680_perform_measurement() {
-  bme680.power_mode = BME680_SLEEP_MODE;
+  bme680.power_mode = BME680_FORCED_MODE;
   if(BME680_OK != bme680_set_sensor_mode(&bme680)) return -1;
 
   uint16_t measure_duration;
@@ -107,7 +66,10 @@ struct bme680_field_data bme680_get_measurements() {
     data.meas_index = -1;
     return data;
   }
-  data.temperature /= 100;
-  data.humidity /= 1000;
+  bme680.power_mode = BME680_SLEEP_MODE;
+  if(BME680_OK != bme680_set_sensor_mode(&bme680)) {
+    data.meas_index = -1;
+    return data;
+  }
   return data;
 }

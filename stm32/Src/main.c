@@ -140,15 +140,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
   int8_t ret;
-  // if(0 != (ret = bme680_create_structure())) {
-  //   char buf[] = "ERR INIT _\r\n";
-  //   const char map[] = "0123456789ABCDEF";
+  if(0 != (ret = bme680_create_structure())) {
+    char buf[] = "ERR INIT _\r\n";
+    const char map[] = "0123456789ABCDEF";
 
-  //   if(ret < 0) ret = -ret;
-  //   buf[9] = map[ret];
+    if(ret < 0) ret = -ret;
+    buf[9] = map[ret];
 
-  //   HAL_UART_Transmit(&huart1, buf, 12, HAL_MAX_DELAY);
-  // }
+    HAL_UART_Transmit(&huart1, buf, 12, HAL_MAX_DELAY);
+  }
 
   while (1)
   {
@@ -158,31 +158,28 @@ int main(void)
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
     HAL_Delay(1000);
 
-    uint8_t data[4];
-    ret = bme680_i2c_read(0x77, 0x73, data, 2);
+    int32_t bme680_delay_ms = bme680_perform_measurement();
+    if(-1 == bme680_delay_ms) {
+      HAL_UART_Transmit(&huart1, "ERR RQ\r\n", 8, HAL_MAX_DELAY);
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+      HAL_Delay(1000);
+      continue;
+    }
 
-    // int32_t bme680_delay_ms = bme680_perform_measurement();
-    // if(-1 == bme680_delay_ms) {
-    //   HAL_UART_Transmit(&huart1, "ERR RQ\r\n", 8, HAL_MAX_DELAY);
-    //   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-    //   HAL_Delay(1000);
-    //   continue;
-    // }
-
-    // struct bme680_field_data data = bme680_get_measurements();
-    // if(-1 == data.meas_index) {
-    //   HAL_UART_Transmit(&huart1, "ERR RD\r\n", 8, HAL_MAX_DELAY);
-    //   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-    //   HAL_Delay(1000);
-    //   continue;
-    // }
+    struct bme680_field_data data = bme680_get_measurements();
+    if(-1 == data.meas_index) {
+      HAL_UART_Transmit(&huart1, "ERR RD\r\n", 8, HAL_MAX_DELAY);
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+      HAL_Delay(1000);
+      continue;
+    }
     
-    // char buf[] = "T=____.__ P=____.__ H=____.__ G=____.__\n";
-    // float_to_string(data.temperature, &buf[2]);
-    // float_to_string(data.pressure, &buf[12]);
-    // float_to_string(data.humidity, &buf[22]);
-    // float_to_string(data.gas_resistance, &buf[32]);
-    // HAL_UART_Transmit(&huart1, buf, 41, HAL_MAX_DELAY);
+    char buf[] = "T=____.__ P=____.__ H=____.__ G=____.__\r\n";
+    float_to_string(data.temperature, &buf[2]);
+    float_to_string(data.pressure, &buf[12]);
+    float_to_string(data.humidity, &buf[22]);
+    float_to_string(data.gas_resistance, &buf[32]);
+    HAL_UART_Transmit(&huart1, buf, sizeof(buf), HAL_MAX_DELAY);
   }
   /* USER CODE END 3 */
 }
