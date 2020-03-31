@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "sensors/run_bme680.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,12 +75,20 @@ static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void float_to_string(float number, char* buf) {
+  const char map[] = "0123456789ABCDEF";
+  buf[0] = map[((int) (number / 1000)) % 10];
+  buf[1] = map[((int) (number / 100)) % 10];
+  buf[2] = map[((int) (number / 10)) % 10];
+  buf[3] = map[((int) (number)) % 10];
+  buf[4] = '.';
+  buf[5] = map[((int) (number * 10)) % 10];
+  buf[6] = map[((int) (number * 100)) % 10];
+}
 /* USER CODE END 0 */
 
 /**
@@ -121,10 +129,27 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
+  // do {
+  //   extern uint8_t huart2ReceiveBuffer[];
+  //   HAL_UART_Receive_IT(&huart2, huart2ReceiveBuffer, 255);
+  // } while(0);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+  int8_t ret;
+  // if(0 != (ret = bme680_create_structure())) {
+  //   char buf[] = "ERR INIT _\r\n";
+  //   const char map[] = "0123456789ABCDEF";
+
+  //   if(ret < 0) ret = -ret;
+  //   buf[9] = map[ret];
+
+  //   HAL_UART_Transmit(&huart1, buf, 12, HAL_MAX_DELAY);
+  // }
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -132,9 +157,32 @@ int main(void)
     /* USER CODE BEGIN 3 */
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
     HAL_Delay(1000);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-    HAL_Delay(1000);
-    HAL_UART_Transmit(&huart1, "Hello World", 12, 1000);
+
+    uint8_t data[4];
+    ret = bme680_i2c_read(0x77, 0x73, data, 2);
+
+    // int32_t bme680_delay_ms = bme680_perform_measurement();
+    // if(-1 == bme680_delay_ms) {
+    //   HAL_UART_Transmit(&huart1, "ERR RQ\r\n", 8, HAL_MAX_DELAY);
+    //   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+    //   HAL_Delay(1000);
+    //   continue;
+    // }
+
+    // struct bme680_field_data data = bme680_get_measurements();
+    // if(-1 == data.meas_index) {
+    //   HAL_UART_Transmit(&huart1, "ERR RD\r\n", 8, HAL_MAX_DELAY);
+    //   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+    //   HAL_Delay(1000);
+    //   continue;
+    // }
+    
+    // char buf[] = "T=____.__ P=____.__ H=____.__ G=____.__\n";
+    // float_to_string(data.temperature, &buf[2]);
+    // float_to_string(data.pressure, &buf[12]);
+    // float_to_string(data.humidity, &buf[22]);
+    // float_to_string(data.gas_resistance, &buf[32]);
+    // HAL_UART_Transmit(&huart1, buf, 41, HAL_MAX_DELAY);
   }
   /* USER CODE END 3 */
 }
@@ -213,7 +261,7 @@ static void MX_ADC1_Init(void)
   }
   /** Configure Regular Channel 
   */
-  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Channel = ADC_CHANNEL_4;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
