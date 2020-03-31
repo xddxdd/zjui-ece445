@@ -81,13 +81,17 @@ static void MX_RTC_Init(void);
 /* USER CODE BEGIN 0 */
 void float_to_string(float number, char* buf) {
   const char map[] = "0123456789ABCDEF";
-  buf[0] = map[((int) (number / 1000)) % 10];
-  buf[1] = map[((int) (number / 100)) % 10];
-  buf[2] = map[((int) (number / 10)) % 10];
-  buf[3] = map[((int) (number)) % 10];
-  buf[4] = '.';
-  buf[5] = map[((int) (number * 10)) % 10];
-  buf[6] = map[((int) (number * 100)) % 10];
+  buf[0] = map[((int) (number / 10000000)) % 10];
+  buf[1] = map[((int) (number / 1000000)) % 10];
+  buf[2] = map[((int) (number / 100000)) % 10];
+  buf[3] = map[((int) (number / 10000)) % 10];
+  buf[4] = map[((int) (number / 1000)) % 10];
+  buf[5] = map[((int) (number / 100)) % 10];
+  buf[6] = map[((int) (number / 10)) % 10];
+  buf[7] = map[((int) (number)) % 10];
+  buf[8] = '.';
+  buf[9] = map[((int) (number * 10)) % 10];
+  buf[10] = map[((int) (number * 100)) % 10];
 }
 /* USER CODE END 0 */
 
@@ -174,12 +178,26 @@ int main(void)
       continue;
     }
     
-    char buf[] = "T=____.__ P=____.__ H=____.__ G=____.__\r\n";
+    char buf[] = "_=________.__\r\n";
+
+    buf[0] = 'T';
     float_to_string(data.temperature, &buf[2]);
-    float_to_string(data.pressure, &buf[12]);
-    float_to_string(data.humidity, &buf[22]);
-    float_to_string(data.gas_resistance, &buf[32]);
     HAL_UART_Transmit(&huart1, buf, sizeof(buf), HAL_MAX_DELAY);
+    
+    buf[0] = 'P';
+    float_to_string(data.pressure, &buf[2]);
+    HAL_UART_Transmit(&huart1, buf, sizeof(buf), HAL_MAX_DELAY);
+
+
+    buf[0] = 'P';
+    float_to_string(data.humidity, &buf[2]);
+    HAL_UART_Transmit(&huart1, buf, sizeof(buf), HAL_MAX_DELAY);
+
+    buf[0] = 'P';
+    float_to_string(data.gas_resistance, &buf[2]);
+    HAL_UART_Transmit(&huart1, buf, sizeof(buf), HAL_MAX_DELAY);
+
+    HAL_UART_Transmit(&huart1, "\r\n", 2, HAL_MAX_DELAY);
   }
   /* USER CODE END 3 */
 }
