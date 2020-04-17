@@ -43,7 +43,6 @@ struct {
     struct {
         float temp;
         float vrefint;
-        uint64_t timestamp;
     } stm32;
 
     struct {
@@ -58,7 +57,6 @@ void println(char* s);
 void print_float(char* name, float value);
 void print_int(char* name, int value);
 
-uint64_t get_tick();
 void setup_pms5003();
 void loop_pms5003();
 void loop_adc();
@@ -77,20 +75,8 @@ void setup() {
     }
 }
 
-// Get tick function, considering clock rollover (happens each ~50 days)
-uint64_t get_tick() {
-    static uint32_t last_tick = 0;
-    static uint32_t rollover_times = 0;
-
-    uint32_t tick = HAL_GetTick();
-    // If the tick number ever decreases, a rollover happened
-    if(tick < last_tick) rollover_times++;
-    last_tick = tick;
-    return (((uint64_t) rollover_times) << 32) | tick;
-}
-
 void loop() {
-    HAL_Delay(1000);
+    // HAL_Delay(1000);
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
@@ -101,11 +87,28 @@ void loop() {
     loop_pms5003();
     loop_adc();
     loop_bme680();
-    measure_value.stm32.timestamp = get_tick();
 
     loop_print();
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+
+    RTC_TimeTypeDef rtc_time;
+    rtc_time.Hours = 0;
+    rtc_time.Minutes = 0;
+    rtc_time.Seconds = 0;
+
+    RTC_AlarmTypeDef rtc_alarm;
+    rtc_alarm.Alarm = RTC_ALARM_A;
+    rtc_alarm.AlarmTime.Hours = 0;
+    rtc_alarm.AlarmTime.Minutes = 0;
+    rtc_alarm.AlarmTime.Seconds = 10;
+
+    HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
+    HAL_RTC_SetAlarm_IT(&hrtc, &rtc_alarm, RTC_FORMAT_BCD);
+
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+    // HAL_PWR_EnterSTANDBYMode();
 }
 
 #define UART_PMS5003 huart2
@@ -207,7 +210,6 @@ void loop_print() {
 
     print_float("STM32   Tmp", measure_value.stm32.temp);
     print_float("STM32   Vrf", measure_value.stm32.vrefint);
-    print_int  ("STM32   Time", measure_value.stm32.timestamp);
     
     println("");
 }
