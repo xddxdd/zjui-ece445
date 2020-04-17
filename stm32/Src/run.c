@@ -67,14 +67,13 @@ void loop_print();
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor);
 
 void setup() {
-    int8_t ret;
-    if(0 != (ret = bme680_create_structure())) {
-        char buf[] = "ERR INIT _";
-
-        if(ret < 0) ret = -ret;
-        buf[9] = map[ret];
-
-        println(buf);
+    if(0 != bme680_create_structure()) {
+        while(1) {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+            HAL_Delay(100);
+        }
     }
 }
 
