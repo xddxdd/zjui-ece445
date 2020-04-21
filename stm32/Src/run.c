@@ -1,6 +1,7 @@
 #include "run.h"
 #include "sensors/run_bme680.h"
 #include "main.h"
+#include <math.h>
 
 extern ADC_HandleTypeDef hadc1;
 extern CRC_HandleTypeDef hcrc;
@@ -101,14 +102,13 @@ void loop() {
     rtc_alarm.Alarm = RTC_ALARM_A;
     rtc_alarm.AlarmTime.Hours = 0;
     rtc_alarm.AlarmTime.Minutes = 0;
-    rtc_alarm.AlarmTime.Seconds = 10;
+    rtc_alarm.AlarmTime.Seconds = 5;
 
     HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
     HAL_RTC_SetAlarm_IT(&hrtc, &rtc_alarm, RTC_FORMAT_BCD);
 
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-    // HAL_PWR_EnterSTANDBYMode();
 }
 
 #define UART_PMS5003 huart2
@@ -147,6 +147,14 @@ void loop_pms5003() {
 #define RESISTOR_VALUE_NH3              47000
 #define RESISTOR_VALUE_NO2              47000
 
+#define MICS6814_BASE_RESISTANCE_CO     1000000
+#define MICS6814_BASE_RESISTANCE_NH3    1000000
+#define MICS6814_BASE_RESISTANCE_NO2    10000
+
+#define MICS6814_BASE_ANALOG_CO     (1.0 * MICS6814_BASE_RESISTANCE_CO / (MICS6814_BASE_RESISTANCE_CO + RESISTOR_VALUE_CO))
+#define MICS6814_BASE_ANALOG_NH3    (1.0 * MICS6814_BASE_RESISTANCE_NH3 / (MICS6814_BASE_RESISTANCE_NH3 + RESISTOR_VALUE_NH3))
+#define MICS6814_BASE_ANALOG_NO2    (1.0 * MICS6814_BASE_RESISTANCE_NO2 / (MICS6814_BASE_RESISTANCE_NO2 + RESISTOR_VALUE_NO2))
+
 #define STM32_VREFINT_VALUE             1.20f
 #define STM32_TEMPERATURE_VOLTAGE_SLOPE 0.0043f
 #define STM32_TEMPERATURE_VOLTAGE_25C   1.43f
@@ -162,9 +170,21 @@ void loop_adc() {
     measure_value.stm32.vrefint = 4096.0 / adc_dma[4] * STM32_VREFINT_VALUE;
     measure_value.stm32.temp = (STM32_TEMPERATURE_VOLTAGE_25C - adc_dma[3] * measure_value.stm32.vrefint / 4096) / STM32_TEMPERATURE_VOLTAGE_SLOPE + 25;
 
-    measure_value.mics6814.co = voltage_to_resistor_value(adc_dma[0], RESISTOR_VALUE_CO);
-    measure_value.mics6814.nh3 = voltage_to_resistor_value(adc_dma[1], RESISTOR_VALUE_NH3);
-    measure_value.mics6814.no2 = voltage_to_resistor_value(adc_dma[2], RESISTOR_VALUE_NO2);
+    // MICS-6814 formula from:
+    // https://github.com/noorkhokhar99/MICS6814/blob/master/MICS6814.cpp
+
+    // measure_value.mics6814.co = voltage_to_resistor_value(adc_dma[0], RESISTOR_VALUE_CO) / MICS6814_BASE_RESISTANCE_CO
+    // measure_value.mics6814.nh3 = voltage_to_resistor_value(adc_dma[1], RESISTOR_VALUE_NH3) / MICS6814_BASE_RESISTANCE_NH3;
+    // measure_value.mics6814.no2 = voltage_to_resistor_value(adc_dma[2], RESISTOR_VALUE_NO2) / MICS6814_BASE_RESISTANCE_NO2;
+
+    measure_value.mics6814.co = 1.0 * adc_dma[0] / MICS6814_BASE_ANALOG_CO * (1 - MICS6814_BASE_ANALOG_CO) / (4096.0 - adc_dma[0]);
+    measure_value.mics6814.nh3 = 1.0 * adc_dma[1] / MICS6814_BASE_ANALOG_NH3 * (1 - MICS6814_BASE_ANALOG_NH3) / (4096.0 - adc_dma[1]);
+    measure_value.mics6814.no2 = 1.0 * adc_dma[2] / MICS6814_BASE_ANALOG_NO2 * (1 - MICS6814_BASE_ANALOG_NO2) / (4096.0 - adc_dma[2]);
+
+    measure_value.mics6814.co = pow(measure_value.mics6814.co, -1.179) * 4.385;
+    measure_value.mics6814.nh3 = pow(measure_value.mics6814.nh3, -1.67) * 1.47;
+    measure_value.mics6814.no2 = pow(measure_value.mics6814.no2, 1.007) * 6.855;
+
     measure_value.valid.mics6814 = 1;
 }
 
