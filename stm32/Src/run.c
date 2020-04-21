@@ -33,6 +33,7 @@ struct {
         float pressure;
         float humidity;
         float gas_resistance;
+        float air_quality;
     } bme680;
 
     struct {
@@ -151,9 +152,16 @@ void loop_pms5003() {
 #define MICS6814_BASE_RESISTANCE_NH3    1000000
 #define MICS6814_BASE_RESISTANCE_NO2    10000
 
-#define MICS6814_BASE_ANALOG_CO     (1.0 * MICS6814_BASE_RESISTANCE_CO / (MICS6814_BASE_RESISTANCE_CO + RESISTOR_VALUE_CO))
-#define MICS6814_BASE_ANALOG_NH3    (1.0 * MICS6814_BASE_RESISTANCE_NH3 / (MICS6814_BASE_RESISTANCE_NH3 + RESISTOR_VALUE_NH3))
-#define MICS6814_BASE_ANALOG_NO2    (1.0 * MICS6814_BASE_RESISTANCE_NO2 / (MICS6814_BASE_RESISTANCE_NO2 + RESISTOR_VALUE_NO2))
+// #define MICS6814_BASE_ANALOG_CO     (1.0 * MICS6814_BASE_RESISTANCE_CO / (MICS6814_BASE_RESISTANCE_CO + RESISTOR_VALUE_CO))
+// #define MICS6814_BASE_ANALOG_NH3    (1.0 * MICS6814_BASE_RESISTANCE_NH3 / (MICS6814_BASE_RESISTANCE_NH3 + RESISTOR_VALUE_NH3))
+// #define MICS6814_BASE_ANALOG_NO2    (1.0 * MICS6814_BASE_RESISTANCE_NO2 / (MICS6814_BASE_RESISTANCE_NO2 + RESISTOR_VALUE_NO2))
+
+#define MICS6814_1X_PPM_CO              4.5
+#define MICS6814_1X_PPM_NH3             0.7
+#define MICS6814_1X_PPM_NO2             0.15
+#define MICS6814_LOG_SLOPE_CO           -0.8
+#define MICS6814_LOG_SLOPE_NH3          -0.55
+#define MICS6814_LOG_SLOPE_NO2          1.0
 
 #define STM32_VREFINT_VALUE             1.20f
 #define STM32_TEMPERATURE_VOLTAGE_SLOPE 0.0043f
@@ -173,20 +181,29 @@ void loop_adc() {
     // MICS-6814 formula from:
     // https://github.com/noorkhokhar99/MICS6814/blob/master/MICS6814.cpp
 
-    // measure_value.mics6814.co = voltage_to_resistor_value(adc_dma[0], RESISTOR_VALUE_CO) / MICS6814_BASE_RESISTANCE_CO
-    // measure_value.mics6814.nh3 = voltage_to_resistor_value(adc_dma[1], RESISTOR_VALUE_NH3) / MICS6814_BASE_RESISTANCE_NH3;
-    // measure_value.mics6814.no2 = voltage_to_resistor_value(adc_dma[2], RESISTOR_VALUE_NO2) / MICS6814_BASE_RESISTANCE_NO2;
+    // measure_value.mics6814.co = 1.0 * adc_dma[0] / MICS6814_BASE_ANALOG_CO * (1 - MICS6814_BASE_ANALOG_CO) / (4096.0 - adc_dma[0]);
+    // measure_value.mics6814.nh3 = 1.0 * adc_dma[1] / MICS6814_BASE_ANALOG_NH3 * (1 - MICS6814_BASE_ANALOG_NH3) / (4096.0 - adc_dma[1]);
+    // measure_value.mics6814.no2 = 1.0 * adc_dma[2] / MICS6814_BASE_ANALOG_NO2 * (1 - MICS6814_BASE_ANALOG_NO2) / (4096.0 - adc_dma[2]);
 
-    measure_value.mics6814.co = 1.0 * adc_dma[0] / MICS6814_BASE_ANALOG_CO * (1 - MICS6814_BASE_ANALOG_CO) / (4096.0 - adc_dma[0]);
-    measure_value.mics6814.nh3 = 1.0 * adc_dma[1] / MICS6814_BASE_ANALOG_NH3 * (1 - MICS6814_BASE_ANALOG_NH3) / (4096.0 - adc_dma[1]);
-    measure_value.mics6814.no2 = 1.0 * adc_dma[2] / MICS6814_BASE_ANALOG_NO2 * (1 - MICS6814_BASE_ANALOG_NO2) / (4096.0 - adc_dma[2]);
+    // measure_value.mics6814.co = pow(measure_value.mics6814.co, -1.179) * 4.385;
+    // measure_value.mics6814.nh3 = pow(measure_value.mics6814.nh3, -1.67) * 1.47;
+    // measure_value.mics6814.no2 = pow(measure_value.mics6814.no2, 1.007) * 6.855;
 
-    measure_value.mics6814.co = pow(measure_value.mics6814.co, -1.179) * 4.385;
-    measure_value.mics6814.nh3 = pow(measure_value.mics6814.nh3, -1.67) * 1.47;
-    measure_value.mics6814.no2 = pow(measure_value.mics6814.no2, 1.007) * 6.855;
+    measure_value.mics6814.co = voltage_to_resistor_value(adc_dma[0], RESISTOR_VALUE_CO);
+    measure_value.mics6814.nh3 = voltage_to_resistor_value(adc_dma[1], RESISTOR_VALUE_NH3);
+    measure_value.mics6814.no2 = voltage_to_resistor_value(adc_dma[2], RESISTOR_VALUE_NO2);
+
+    measure_value.mics6814.co = MICS6814_1X_PPM_CO * powf(10, log10f(measure_value.mics6814.co / MICS6814_BASE_RESISTANCE_CO) / MICS6814_LOG_SLOPE_CO);
+    measure_value.mics6814.nh3 = MICS6814_1X_PPM_NH3 * powf(10, log10f(measure_value.mics6814.nh3 / MICS6814_BASE_RESISTANCE_NH3) / MICS6814_LOG_SLOPE_NH3);
+    measure_value.mics6814.no2 = MICS6814_1X_PPM_NO2 * powf(10, log10f(measure_value.mics6814.no2 / MICS6814_BASE_RESISTANCE_NO2) / MICS6814_LOG_SLOPE_NO2);
 
     measure_value.valid.mics6814 = 1;
 }
+
+#define BME680_GAS_BASELINE         200000
+#define BME680_GAS_WEIGHT           75
+#define BME680_HUMIDITY_BASELINE    40.0
+#define BME680_HUMIDITY_WEIGHT      (100 - BME680_GAS_WEIGHT)
 
 void loop_bme680() {
     int32_t bme680_delay_ms = bme680_perform_measurement();
@@ -199,6 +216,21 @@ void loop_bme680() {
     measure_value.bme680.pressure = data.pressure;
     measure_value.bme680.humidity = data.humidity;
     measure_value.bme680.gas_resistance = data.gas_resistance;
+
+    // https://github.com/pimoroni/bme680-python/blob/master/examples/indoor-air-quality.py
+    float humidity_score, gas_score;
+    if(measure_value.bme680.humidity >= BME680_HUMIDITY_BASELINE) {
+        humidity_score = (100 - measure_value.bme680.humidity) / (100 - BME680_HUMIDITY_BASELINE) * BME680_HUMIDITY_WEIGHT;
+    } else {
+        humidity_score = measure_value.bme680.humidity / BME680_HUMIDITY_BASELINE * BME680_HUMIDITY_WEIGHT;
+    }
+    if(measure_value.bme680.gas_resistance >= BME680_GAS_BASELINE) {
+        gas_score = (measure_value.bme680.gas_resistance / BME680_GAS_BASELINE) * BME680_GAS_WEIGHT;
+    } else {
+        gas_score = BME680_GAS_WEIGHT;
+    }
+    measure_value.bme680.air_quality = 5 * (100 - humidity_score - gas_score);
+
     measure_value.valid.bme680 = 1;
 }
 
@@ -216,6 +248,7 @@ void loop_print() {
         print_float("BME680  Prs", measure_value.bme680.pressure);
         print_float("BME680  Hum", measure_value.bme680.humidity);
         print_float("BME680  Gas", measure_value.bme680.gas_resistance);
+        print_float("BME680  AQI", measure_value.bme680.air_quality);
     } else {
         println("BME680 Measure Error");
     }
