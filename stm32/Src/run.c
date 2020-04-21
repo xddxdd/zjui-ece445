@@ -1,6 +1,7 @@
 #include "run.h"
 #include "sensors/run_bme680.h"
 #include "main.h"
+#include <stdio.h>
 #include <math.h>
 
 extern ADC_HandleTypeDef hadc1;
@@ -14,15 +15,7 @@ extern UART_HandleTypeDef huart3;
 uint32_t adc_dma[5];
 volatile uint32_t adc_dma_finished;
 
-#define PRINT_DEVICE huart1
-const char map[] = "0123456789ABCDEF";
-
 measure_value_t measure_value;
-
-void print(char* s);
-void println(char* s);
-void print_float(char* name, float value);
-void print_int(char* name, int value);
 
 void setup_pms5003();
 void loop_pms5003();
@@ -32,29 +25,29 @@ void loop_print();
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor);
 
 void setup() {
-    // if(0 != bme680_create_structure()) {
-    //     while(1) {
-    //         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-    //         HAL_Delay(100);
-    //         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-    //         HAL_Delay(100);
-    //     }
-    // }
-    bme680_my_init();
+    if(0 != bme680_my_init()) {
+        while(1) {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+            HAL_Delay(100);
+        }
+    }
+    
 }
 
 void loop() {
-    // HAL_Delay(1000);
-
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
     measure_value.valid.pms5003 = 0;
     measure_value.valid.bme680 = 0;
     measure_value.valid.mics6814 = 0;
 
-    loop_pms5003();
+    for(int i = 0; i < 3 && !measure_value.valid.pms5003; i++) {
+        loop_pms5003();
+    }
     loop_adc();
-    loop_bme680();
+    bme680_my_loop();
 
     loop_print();
 
@@ -76,10 +69,12 @@ void loop() {
 
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+
+    extern volatile uint32_t uwTick;
+    uwTick += rtc_alarm.AlarmTime.Seconds * 1000;
 }
 
 #define UART_PMS5003 huart2
-
 void loop_pms5003() {
     uint8_t buf[32];
     int ret;
@@ -166,151 +161,40 @@ void loop_adc() {
     measure_value.valid.mics6814 = 1;
 }
 
-#define BME680_GAS_BASELINE         200000
-#define BME680_GAS_WEIGHT           75
-#define BME680_HUMIDITY_BASELINE    40.0
-#define BME680_HUMIDITY_WEIGHT      (100 - BME680_GAS_WEIGHT)
-
-void loop_bme680() {
-    bme680_my_loop();
-    // int32_t bme680_delay_ms = bme680_perform_measurement();
-    // if(-1 == bme680_delay_ms) return;
-
-    // struct bme680_field_data data;
-    // if(-1 == bme680_get_measurements(&data)) return;
-
-    // measure_value.bme680.temperature = data.temperature;
-    // measure_value.bme680.pressure = data.pressure;
-    // measure_value.bme680.humidity = data.humidity;
-    // measure_value.bme680.gas_resistance = data.gas_resistance;
-
-    // // https://github.com/pimoroni/bme680-python/blob/master/examples/indoor-air-quality.py
-    // float humidity_score, gas_score;
-    // if(measure_value.bme680.humidity >= BME680_HUMIDITY_BASELINE) {
-    //     humidity_score = (100 - measure_value.bme680.humidity) / (100 - BME680_HUMIDITY_BASELINE) * BME680_HUMIDITY_WEIGHT;
-    // } else {
-    //     humidity_score = measure_value.bme680.humidity / BME680_HUMIDITY_BASELINE * BME680_HUMIDITY_WEIGHT;
-    // }
-    // if(measure_value.bme680.gas_resistance >= BME680_GAS_BASELINE) {
-    //     gas_score = (measure_value.bme680.gas_resistance / BME680_GAS_BASELINE) * BME680_GAS_WEIGHT;
-    // } else {
-    //     gas_score = BME680_GAS_WEIGHT;
-    // }
-    // measure_value.bme680.air_quality = 5 * (100 - humidity_score - gas_score);
-
-    // measure_value.valid.bme680 = 1;
-}
-
 void loop_print() {
     if(measure_value.valid.pms5003) {
-        print_float("PMS5003 PM1.0", measure_value.pms5003.pm1);
-        print_float("PMS5003 PM2.5", measure_value.pms5003.pm2_5);
-        print_float("PMS5003 PM10 ", measure_value.pms5003.pm10);
+        printf("PMS5003 PM1.0 %d\r\n", measure_value.pms5003.pm1);
+        printf("PMS5003 PM2.5 %d\r\n", measure_value.pms5003.pm2_5);
+        printf("PMS5003 PM10  %d\r\n", measure_value.pms5003.pm10);
     } else {
-        println("PMS5003 Measure Error");
+        printf("PMS5003 Measure Error\r\n");
     }
     
     if(measure_value.valid.bme680) {
-        print_float("BME680  Tmp", measure_value.bme680.temperature);
-        print_float("BME680  Prs", measure_value.bme680.pressure);
-        print_float("BME680  Hum", measure_value.bme680.humidity);
-        print_float("BME680  Gas", measure_value.bme680.gas_resistance);
-        print_float("BME680  AQI", measure_value.bme680.air_quality);
+        printf("BME680  Tmp   %.4f\r\n", measure_value.bme680.temperature);
+        printf("BME680  Prs   %.4f\r\n", measure_value.bme680.pressure);
+        printf("BME680  Hum   %.4f\r\n", measure_value.bme680.humidity);
+        printf("BME680  TVOC  %.4f\r\n", measure_value.bme680.tvoc);
+        printf("BME680  CO2   %.4f\r\n", measure_value.bme680.co2);
+        printf("BME680  IAQ   %.4f\r\n", measure_value.bme680.air_quality);
     } else {
-        println("BME680 Measure Error");
+        printf("BME680 Measure Error\r\n");
     }
     
     if(measure_value.valid.mics6814) {
-        print_float("MICS    CO ", measure_value.mics6814.co);
-        print_float("MICS    NH3", measure_value.mics6814.nh3);
-        print_float("MICS    NO2", measure_value.mics6814.no2);
+        printf("MICS    CO    %.4f\r\n", measure_value.mics6814.co);
+        printf("MICS    NH3   %.4f\r\n", measure_value.mics6814.nh3);
+        printf("MICS    NO2   %.4f\r\n", measure_value.mics6814.no2);
     } else {
-        println("MICS Measure Error");
+        printf("MICS Measure Error\r\n");
     }
 
-    print_float("STM32   Tmp", measure_value.stm32.temp);
-    print_float("STM32   Vrf", measure_value.stm32.vrefint);
+    printf("STM32   Tmp %.4f\r\n", measure_value.stm32.temp);
+    printf("STM32   Vrf %.4f\r\n", measure_value.stm32.vrefint);
     
-    println("");
+    printf("\r\n");
 }
 
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor) {
     return 1.0 * resistor * voltage / (4096 - voltage);
-}
-
-/*****************************************
- * Common functions
- *****************************************/
-
-void print(char* s) {
-    int32_t len = 0;
-    while(s[len++]);
-    HAL_UART_Transmit(&PRINT_DEVICE, (uint8_t*) s, len, HAL_MAX_DELAY);
-}
-
-void println(char* s) {
-    print(s);
-    print("\r\n");
-}
-
-void print_int(char* name, int value) {
-    char buf[256];
-
-    int32_t len = 0;
-    while(name[len]) {
-        buf[len] = name[len];
-        len++;
-    }
-    if(len > 256 - 16) len = 256 - 16;
-    buf[len++] = ' ';
-    buf[len++] = '=';
-    buf[len++] = ' ';
-
-    buf[len++] = map[((int) (value / 10000000)) % 10];
-    buf[len++] = map[((int) (value / 1000000)) % 10];
-    buf[len++] = map[((int) (value / 100000)) % 10];
-    buf[len++] = map[((int) (value / 10000)) % 10];
-    buf[len++] = map[((int) (value / 1000)) % 10];
-    buf[len++] = map[((int) (value / 100)) % 10];
-    buf[len++] = map[((int) (value / 10)) % 10];
-    buf[len++] = map[((int) (value)) % 10];
-    buf[len++] = '.';
-    buf[len++] = map[((int) (value * 10)) % 10];
-    buf[len++] = map[((int) (value * 100)) % 10];
-
-    buf[len++] = '\r';
-    buf[len++] = '\n';
-
-    HAL_UART_Transmit(&PRINT_DEVICE, (uint8_t*) buf, len, HAL_MAX_DELAY);
-}
-
-void print_float(char* name, float value) {
-    char buf[256];
-
-    int32_t len = 0;
-    while(name[len]) {
-        buf[len] = name[len];
-        len++;
-    }
-    if(len > 256 - 16) len = 256 - 16;
-    buf[len++] = ' ';
-    buf[len++] = '=';
-    buf[len++] = ' ';
-
-    buf[len++] = map[((int) (value / 10000000)) % 10];
-    buf[len++] = map[((int) (value / 1000000)) % 10];
-    buf[len++] = map[((int) (value / 100000)) % 10];
-    buf[len++] = map[((int) (value / 10000)) % 10];
-    buf[len++] = map[((int) (value / 1000)) % 10];
-    buf[len++] = map[((int) (value / 100)) % 10];
-    buf[len++] = map[((int) (value / 10)) % 10];
-    buf[len++] = map[((int) (value)) % 10];
-    buf[len++] = '.';
-    buf[len++] = map[((int) (value * 10)) % 10];
-    buf[len++] = map[((int) (value * 100)) % 10];
-
-    buf[len++] = '\r';
-    buf[len++] = '\n';
-
-    HAL_UART_Transmit(&PRINT_DEVICE, (uint8_t*) buf, len, HAL_MAX_DELAY);
 }

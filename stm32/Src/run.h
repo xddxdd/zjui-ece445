@@ -17,8 +17,9 @@ typedef struct {
         float temperature;
         float pressure;
         float humidity;
-        float gas_resistance;
         float air_quality;
+        float tvoc;
+        float co2;
     } bme680;
 
     struct {
