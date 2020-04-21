@@ -41,9 +41,11 @@ Src/stm32f1xx_it.c \
 Src/stm32f1xx_hal_msp.c \
 Src/run.c \
 Src/printf.c \
-Src/sensors/bme680.c \
-Src/sensors/bsec_integration.c \
-Src/sensors/run_bme680.c \
+Src/adc/adc.c \
+Src/bme680/bme680.c \
+Src/bme680/bsec_integration.c \
+Src/bme680/run_bme680.c \
+Src/pms5003/pms5003.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc_ex.c \
@@ -124,6 +126,7 @@ AS_INCLUDES =  \
 # C includes
 C_INCLUDES =  \
 -IInc \
+-ISrc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include \
@@ -152,7 +155,7 @@ LDSCRIPT = STM32F103C8Tx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys -lalgobsec
-LIBDIR = -LSrc/sensors
+LIBDIR = -LSrc/bme680
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -u _printf_float
 
 # default action: build all
