@@ -1,8 +1,9 @@
 #pragma once
 
-#include "bme680.h"
+#include "bsec_datatypes.h"
+#include "bsec_interface.h"
+#include "bsec_integration.h"
 #include "main.h"
 
-int32_t bme680_create_structure();
-int32_t bme680_perform_measurement();
-int32_t bme680_get_measurements(struct bme680_field_data* data);
+int bme680_my_init();
+void bme680_my_loop();

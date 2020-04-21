@@ -17,42 +17,7 @@ volatile uint32_t adc_dma_finished;
 #define PRINT_DEVICE huart1
 const char map[] = "0123456789ABCDEF";
 
-struct {
-    union {
-        struct __attribute__((packed)) {
-            uint8_t pms5003 : 1;
-            uint8_t bme680 : 1;
-            uint8_t mics6814 : 1;
-            uint8_t __reserved : 5;
-        };
-        uint8_t raw;
-    } valid;
-
-    struct {
-        float temperature;
-        float pressure;
-        float humidity;
-        float gas_resistance;
-        float air_quality;
-    } bme680;
-
-    struct {
-        float co;
-        float nh3;
-        float no2;
-    } mics6814;
-
-    struct {
-        float temp;
-        float vrefint;
-    } stm32;
-
-    struct {
-        uint16_t pm1;
-        uint16_t pm2_5;
-        uint16_t pm10;
-    } pms5003;
-} measure_value;
+measure_value_t measure_value;
 
 void print(char* s);
 void println(char* s);
@@ -67,14 +32,15 @@ void loop_print();
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor);
 
 void setup() {
-    if(0 != bme680_create_structure()) {
-        while(1) {
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-            HAL_Delay(100);
-        }
-    }
+    // if(0 != bme680_create_structure()) {
+    //     while(1) {
+    //         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+    //         HAL_Delay(100);
+    //         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+    //         HAL_Delay(100);
+    //     }
+    // }
+    bme680_my_init();
 }
 
 void loop() {
@@ -206,32 +172,33 @@ void loop_adc() {
 #define BME680_HUMIDITY_WEIGHT      (100 - BME680_GAS_WEIGHT)
 
 void loop_bme680() {
-    int32_t bme680_delay_ms = bme680_perform_measurement();
-    if(-1 == bme680_delay_ms) return;
+    bme680_my_loop();
+    // int32_t bme680_delay_ms = bme680_perform_measurement();
+    // if(-1 == bme680_delay_ms) return;
 
-    struct bme680_field_data data;
-    if(-1 == bme680_get_measurements(&data)) return;
+    // struct bme680_field_data data;
+    // if(-1 == bme680_get_measurements(&data)) return;
 
-    measure_value.bme680.temperature = data.temperature;
-    measure_value.bme680.pressure = data.pressure;
-    measure_value.bme680.humidity = data.humidity;
-    measure_value.bme680.gas_resistance = data.gas_resistance;
+    // measure_value.bme680.temperature = data.temperature;
+    // measure_value.bme680.pressure = data.pressure;
+    // measure_value.bme680.humidity = data.humidity;
+    // measure_value.bme680.gas_resistance = data.gas_resistance;
 
-    // https://github.com/pimoroni/bme680-python/blob/master/examples/indoor-air-quality.py
-    float humidity_score, gas_score;
-    if(measure_value.bme680.humidity >= BME680_HUMIDITY_BASELINE) {
-        humidity_score = (100 - measure_value.bme680.humidity) / (100 - BME680_HUMIDITY_BASELINE) * BME680_HUMIDITY_WEIGHT;
-    } else {
-        humidity_score = measure_value.bme680.humidity / BME680_HUMIDITY_BASELINE * BME680_HUMIDITY_WEIGHT;
-    }
-    if(measure_value.bme680.gas_resistance >= BME680_GAS_BASELINE) {
-        gas_score = (measure_value.bme680.gas_resistance / BME680_GAS_BASELINE) * BME680_GAS_WEIGHT;
-    } else {
-        gas_score = BME680_GAS_WEIGHT;
-    }
-    measure_value.bme680.air_quality = 5 * (100 - humidity_score - gas_score);
+    // // https://github.com/pimoroni/bme680-python/blob/master/examples/indoor-air-quality.py
+    // float humidity_score, gas_score;
+    // if(measure_value.bme680.humidity >= BME680_HUMIDITY_BASELINE) {
+    //     humidity_score = (100 - measure_value.bme680.humidity) / (100 - BME680_HUMIDITY_BASELINE) * BME680_HUMIDITY_WEIGHT;
+    // } else {
+    //     humidity_score = measure_value.bme680.humidity / BME680_HUMIDITY_BASELINE * BME680_HUMIDITY_WEIGHT;
+    // }
+    // if(measure_value.bme680.gas_resistance >= BME680_GAS_BASELINE) {
+    //     gas_score = (measure_value.bme680.gas_resistance / BME680_GAS_BASELINE) * BME680_GAS_WEIGHT;
+    // } else {
+    //     gas_score = BME680_GAS_WEIGHT;
+    // }
+    // measure_value.bme680.air_quality = 5 * (100 - humidity_score - gas_score);
 
-    measure_value.valid.bme680 = 1;
+    // measure_value.valid.bme680 = 1;
 }
 
 void loop_print() {

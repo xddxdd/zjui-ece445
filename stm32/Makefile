@@ -41,6 +41,7 @@ Src/stm32f1xx_it.c \
 Src/stm32f1xx_hal_msp.c \
 Src/run.c \
 Src/sensors/bme680.c \
+Src/sensors/bsec_integration.c \
 Src/sensors/run_bme680.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.c \
@@ -149,8 +150,8 @@ CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 LDSCRIPT = STM32F103C8Tx_FLASH.ld
 
 # libraries
-LIBS = -lc -lm -lnosys 
-LIBDIR = 
+LIBS = -lc -lm -lnosys -lalgobsec
+LIBDIR = -LSrc/sensors
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
