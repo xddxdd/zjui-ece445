@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 extern ADC_HandleTypeDef hadc1;
-extern CRC_HandleTypeDef hcrc;
 extern I2C_HandleTypeDef hi2c1;
 extern RTC_HandleTypeDef hrtc;
 extern UART_HandleTypeDef huart1;
@@ -15,8 +14,10 @@ measure_value_t measure_value;
 
 extern void loop_pms5003();
 extern void loop_adc();
+extern void loop_esp8266();
 
 void loop_print();
+void deep_sleep(uint32_t seconds);
 
 void setup() {
     if(0 != bme680_my_init()) {
@@ -27,7 +28,28 @@ void setup() {
             HAL_Delay(100);
         }
     }
-    
+}
+
+void deep_sleep(uint32_t seconds) {
+    RTC_TimeTypeDef rtc_time;
+    rtc_time.Hours = 0;
+    rtc_time.Minutes = 0;
+    rtc_time.Seconds = 0;
+
+    RTC_AlarmTypeDef rtc_alarm;
+    rtc_alarm.Alarm = RTC_ALARM_A;
+    rtc_alarm.AlarmTime.Hours = seconds / 3600;
+    rtc_alarm.AlarmTime.Minutes = (seconds % 3600) / 60;
+    rtc_alarm.AlarmTime.Seconds = seconds % 60;
+
+    HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
+    HAL_RTC_SetAlarm_IT(&hrtc, &rtc_alarm, RTC_FORMAT_BCD);
+
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+
+    extern volatile uint32_t uwTick;
+    uwTick += seconds * 1000;
 }
 
 void loop() {
@@ -45,59 +67,54 @@ void loop() {
 
     loop_print();
 
+    loop_esp8266();
+
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 
-    RTC_TimeTypeDef rtc_time;
-    rtc_time.Hours = 0;
-    rtc_time.Minutes = 0;
-    rtc_time.Seconds = 0;
-
-    RTC_AlarmTypeDef rtc_alarm;
-    rtc_alarm.Alarm = RTC_ALARM_A;
-    rtc_alarm.AlarmTime.Hours = 0;
-    rtc_alarm.AlarmTime.Minutes = 0;
-    rtc_alarm.AlarmTime.Seconds = 5;
-
-    HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
-    HAL_RTC_SetAlarm_IT(&hrtc, &rtc_alarm, RTC_FORMAT_BCD);
-
-    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-
-    extern volatile uint32_t uwTick;
-    uwTick += rtc_alarm.AlarmTime.Seconds * 1000;
+    deep_sleep(5);
 }
 
 void loop_print() {
-    if(measure_value.valid.pms5003) {
-        printf("PMS5003 PM1.0 %d\r\n", measure_value.pms5003.pm1);
-        printf("PMS5003 PM2.5 %d\r\n", measure_value.pms5003.pm2_5);
-        printf("PMS5003 PM10  %d\r\n", measure_value.pms5003.pm10);
-    } else {
-        printf("PMS5003 Measure Error\r\n");
-    }
-    
-    if(measure_value.valid.bme680) {
-        printf("BME680  Tmp   %.4f\r\n", measure_value.bme680.temperature);
-        printf("BME680  Prs   %.4f\r\n", measure_value.bme680.pressure);
-        printf("BME680  Hum   %.4f\r\n", measure_value.bme680.humidity);
-        printf("BME680  TVOC  %.4f\r\n", measure_value.bme680.tvoc);
-        printf("BME680  CO2   %.4f\r\n", measure_value.bme680.co2);
-        printf("BME680  IAQ   %.4f\r\n", measure_value.bme680.air_quality);
-    } else {
-        printf("BME680 Measure Error\r\n");
-    }
-    
-    if(measure_value.valid.mics6814) {
-        printf("MICS    CO    %.4f\r\n", measure_value.mics6814.co);
-        printf("MICS    NH3   %.4f\r\n", measure_value.mics6814.nh3);
-        printf("MICS    NO2   %.4f\r\n", measure_value.mics6814.no2);
-    } else {
-        printf("MICS Measure Error\r\n");
-    }
+    extern char tcp_send_buf[1024];
+    extern uint32_t tcp_send_len;
 
-    printf("STM32   Tmp   %.4f\r\n", measure_value.stm32.temp);
-    printf("STM32   Vrf   %.4f\r\n", measure_value.stm32.vrefint);
-    
-    printf("\r\n");
+    tcp_send_len = sprintf(
+        tcp_send_buf,
+
+        "PMS5003 PM1.0 %d\r\n"
+        "PMS5003 PM2.5 %d\r\n"
+        "PMS5003 PM10  %d\r\n"
+
+        "BME680  Tmp   %.4f\r\n"
+        "BME680  Prs   %.4f\r\n"
+        "BME680  Hum   %.4f\r\n"
+        "BME680  TVOC  %.4f\r\n"
+        "BME680  CO2   %.4f\r\n"
+        "BME680  IAQ   %.4f\r\n"
+
+        "MICS    CO    %.4f\r\n"
+        "MICS    NH3   %.4f\r\n"
+        "MICS    NO2   %.4f\r\n"
+
+        "STM32   Tmp   %.4f\r\n"
+        "STM32   Vref  %.4f\r\n",
+
+        measure_value.valid.pms5003 ? measure_value.pms5003.pm1 : -1,
+        measure_value.valid.pms5003 ? measure_value.pms5003.pm2_5 : -1,
+        measure_value.valid.pms5003 ? measure_value.pms5003.pm10 : -1,
+
+        measure_value.valid.bme680 ? measure_value.bme680.temperature : -1,
+        measure_value.valid.bme680 ? measure_value.bme680.pressure : -1,
+        measure_value.valid.bme680 ? measure_value.bme680.humidity : -1,
+        measure_value.valid.bme680 ? measure_value.bme680.tvoc : -1,
+        measure_value.valid.bme680 ? measure_value.bme680.co2 : -1,
+        measure_value.valid.bme680 ? measure_value.bme680.air_quality : -1,
+
+        measure_value.valid.mics6814 ? measure_value.mics6814.co : -1,
+        measure_value.valid.mics6814 ? measure_value.mics6814.nh3 : -1,
+        measure_value.valid.mics6814 ? measure_value.mics6814.no2 : -1,
+
+        measure_value.stm32.temp,
+        measure_value.stm32.vrefint
+    );
 }
