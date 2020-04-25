@@ -185,38 +185,11 @@ return_values_init bsec_iot_init(float sample_rate, float temperature_offset, bm
         return ret;
     }
     
-    // /* Load library config, if available */
-    // bsec_config_len = config_load(bsec_config, sizeof(bsec_config));
-    // if (bsec_config_len != 0)
-    // {       
-    //     ret.bsec_status = bsec_set_configuration(bsec_config, bsec_config_len, work_buffer, sizeof(work_buffer));     
-    //     if (ret.bsec_status != BSEC_OK)
-    //     {
-    //         return ret;
-    //     }
-    // }
-    
-    // /* Load previous library state, if available */
-    // bsec_state_len = state_load(bsec_state, sizeof(bsec_state));
-    // if (bsec_state_len != 0)
-    // {       
-    //     ret.bsec_status = bsec_set_state(bsec_state, bsec_state_len, work_buffer, sizeof(work_buffer));     
-    //     if (ret.bsec_status != BSEC_OK)
-    //     {
-    //         return ret;
-    //     }
-    // }
-    
     /* Set temperature offset */
     bme680_temperature_offset_g = temperature_offset;
     
     /* Call to the function which sets the library with subscription information */
     ret.bsec_status = bme680_bsec_update_subscription(sample_rate);
-    if (ret.bsec_status != BSEC_OK)
-    {
-        return ret;
-    }
-    
     return ret;
 }
 
@@ -376,18 +349,18 @@ void bme680_bsec_process_data(bsec_input_t *bsec_inputs, uint8_t num_bsec_inputs
     uint8_t num_bsec_outputs = 0;
     uint8_t index = 0;
 
-    bsec_library_return_t bsec_status = BSEC_OK;
+    // bsec_library_return_t bsec_status = BSEC_OK;
     
-    int64_t timestamp = 0;
+    // int64_t timestamp = 0;
     float iaq = 0.0f;
-    uint8_t iaq_accuracy = 0;
+    // uint8_t iaq_accuracy = 0;
     float temp = 0.0f;
-    float raw_temp = 0.0f;
+    // float raw_temp = 0.0f;
     float raw_pressure = 0.0f;
     float humidity = 0.0f;
-    float raw_humidity = 0.0f;
-    float raw_gas = 0.0f;
-    float static_iaq = 0.0f;
+    // float raw_humidity = 0.0f;
+    // float raw_gas = 0.0f;
+    // float static_iaq = 0.0f;
     // uint8_t static_iaq_accuracy = 0;
     float co2_equivalent = 0.0f;
     // uint8_t co2_accuracy = 0;
@@ -410,7 +383,8 @@ void bme680_bsec_process_data(bsec_input_t *bsec_inputs, uint8_t num_bsec_inputs
            * The number of outputs you get depends on what you asked for during bsec_update_subscription(). This is
              handled under bme680_bsec_update_subscription() function in this example file.
            * The number of actual outputs that are returned is written to num_bsec_outputs. */
-        bsec_status = bsec_do_steps(bsec_inputs, num_bsec_inputs, bsec_outputs, &num_bsec_outputs);
+        // bsec_status = bsec_do_steps(bsec_inputs, num_bsec_inputs, bsec_outputs, &num_bsec_outputs);
+        bsec_do_steps(bsec_inputs, num_bsec_inputs, bsec_outputs, &num_bsec_outputs);
         
         /* Iterate through the outputs and extract the relevant ones. */
         for (index = 0; index < num_bsec_outputs; index++)
@@ -419,12 +393,12 @@ void bme680_bsec_process_data(bsec_input_t *bsec_inputs, uint8_t num_bsec_inputs
             {
                 case BSEC_OUTPUT_IAQ:
                     iaq = bsec_outputs[index].signal;
-                    iaq_accuracy = bsec_outputs[index].accuracy;
+                    // iaq_accuracy = bsec_outputs[index].accuracy;
                     break;
-                case BSEC_OUTPUT_STATIC_IAQ:
-                    static_iaq = bsec_outputs[index].signal;
-                    // static_iaq_accuracy = bsec_outputs[index].accuracy;
-                    break;
+                // case BSEC_OUTPUT_STATIC_IAQ:
+                //     static_iaq = bsec_outputs[index].signal;
+                //     // static_iaq_accuracy = bsec_outputs[index].accuracy;
+                //     break;
                 case BSEC_OUTPUT_CO2_EQUIVALENT:
                     co2_equivalent = bsec_outputs[index].signal;
                     // co2_accuracy = bsec_outputs[index].accuracy;
@@ -442,114 +416,35 @@ void bme680_bsec_process_data(bsec_input_t *bsec_inputs, uint8_t num_bsec_inputs
                 case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY:
                     humidity = bsec_outputs[index].signal;
                     break;
-                case BSEC_OUTPUT_RAW_GAS:
-                    raw_gas = bsec_outputs[index].signal;
-                    break;
-                case BSEC_OUTPUT_RAW_TEMPERATURE:
-                    raw_temp = bsec_outputs[index].signal;
-                    break;
-                case BSEC_OUTPUT_RAW_HUMIDITY:
-                    raw_humidity = bsec_outputs[index].signal;
-                    break;
-                case BSEC_OUTPUT_COMPENSATED_GAS:
-                    // comp_gas_value = bsec_outputs[index].signal;
-                    // comp_gas_accuracy = bsec_outputs[index].accuracy;
-                    break;
-                case BSEC_OUTPUT_GAS_PERCENTAGE:
-                    // gas_percentage = bsec_outputs[index].signal;
-                    // gas_percentage_acccuracy = bsec_outputs[index].accuracy;
-                    break;
+                // case BSEC_OUTPUT_RAW_GAS:
+                //     raw_gas = bsec_outputs[index].signal;
+                //     break;
+                // case BSEC_OUTPUT_RAW_TEMPERATURE:
+                //     raw_temp = bsec_outputs[index].signal;
+                //     break;
+                // case BSEC_OUTPUT_RAW_HUMIDITY:
+                //     raw_humidity = bsec_outputs[index].signal;
+                //     break;
+                // case BSEC_OUTPUT_COMPENSATED_GAS:
+                //     comp_gas_value = bsec_outputs[index].signal;
+                //     comp_gas_accuracy = bsec_outputs[index].accuracy;
+                //     break;
+                // case BSEC_OUTPUT_GAS_PERCENTAGE:
+                //     gas_percentage = bsec_outputs[index].signal;
+                //     gas_percentage_acccuracy = bsec_outputs[index].accuracy;
+                //     break;
                 default:
                     continue;
             }
             
             /* Assume that all the returned timestamps are the same */
-            timestamp = bsec_outputs[index].time_stamp;
+            // timestamp = bsec_outputs[index].time_stamp;
         }
         
         /* Pass the extracted outputs to the user provided output_ready() function. */
-        output_ready(timestamp, iaq, iaq_accuracy, temp, humidity, raw_pressure, raw_temp, 
-            raw_humidity, raw_gas, bsec_status, static_iaq, co2_equivalent, breath_voc_equivalent);
+        output_ready(iaq, temp, humidity, raw_pressure, co2_equivalent, breath_voc_equivalent);
     }
 }
-
-/*!
- * @brief       Runs the main (endless) loop that queries sensor settings, applies them, and processes the measured data
- *
- * @param[in]   sleep               pointer to the system specific sleep function
- * @param[in]   get_timestamp_us    pointer to the system specific timestamp derivation function
- * @param[in]   output_ready        pointer to the function processing obtained BSEC outputs
- * @param[in]   state_save          pointer to the system-specific state save function
- * @param[in]   save_intvl          interval at which BSEC state should be saved (in samples)
- *
- * @return      none
- */
-// void bsec_iot_loop(sleep_fct sleep, get_timestamp_us_fct get_timestamp_us, output_ready_fct output_ready,
-//                     state_save_fct state_save, uint32_t save_intvl)
-// {
-//     /* Timestamp variables */
-//     int64_t time_stamp = 0;
-//     int64_t time_stamp_interval_ms = 0;
-    
-//     /* Allocate enough memory for up to BSEC_MAX_PHYSICAL_SENSOR physical inputs*/
-//     bsec_input_t bsec_inputs[BSEC_MAX_PHYSICAL_SENSOR];
-    
-//     /* Number of inputs to BSEC */
-//     uint8_t num_bsec_inputs = 0;
-    
-//     /* BSEC sensor settings struct */
-//     bsec_bme_settings_t sensor_settings;
-    
-//     /* Save state variables */
-//     uint8_t bsec_state[BSEC_MAX_STATE_BLOB_SIZE];
-//     uint8_t work_buffer[BSEC_MAX_STATE_BLOB_SIZE];
-//     uint32_t bsec_state_len = 0;
-//     uint32_t n_samples = 0;
-    
-//     bsec_library_return_t bsec_status = BSEC_OK;
-
-//     while (1)
-//     {
-//         /* get the timestamp in nanoseconds before calling bsec_sensor_control() */
-//         time_stamp = get_timestamp_us() * 1000;
-        
-//         /* Retrieve sensor settings to be used in this time instant by calling bsec_sensor_control */
-//         bsec_sensor_control(time_stamp, &sensor_settings);
-        
-//         /* Trigger a measurement if necessary */
-//         bme680_bsec_trigger_measurement(&sensor_settings, sleep);
-        
-//         /* Read data from last measurement */
-//         num_bsec_inputs = 0;
-//         bme680_bsec_read_data(time_stamp, bsec_inputs, &num_bsec_inputs, sensor_settings.process_data);
-        
-//         /* Time to invoke BSEC to perform the actual processing */
-//         bme680_bsec_process_data(bsec_inputs, num_bsec_inputs, output_ready);
-        
-//         /* Increment sample counter */
-//         n_samples++;
-        
-//         /* Retrieve and store state if the passed save_intvl */
-//         if (n_samples >= save_intvl)
-//         {
-//             bsec_status = bsec_get_state(0, bsec_state, sizeof(bsec_state), work_buffer, sizeof(work_buffer), &bsec_state_len);
-//             if (bsec_status == BSEC_OK)
-//             {
-//                 state_save(bsec_state, bsec_state_len);
-//             }
-//             n_samples = 0;
-//         }
-        
-        
-//         /* Compute how long we can sleep until we need to call bsec_sensor_control() next */
-//         /* Time_stamp is converted from microseconds to nanoseconds first and then the difference to milliseconds */
-//         time_stamp_interval_ms = (sensor_settings.next_call - get_timestamp_us() * 1000) / 1000000;
-//         if (time_stamp_interval_ms > 0)
-//         {
-//             sleep((uint32_t)time_stamp_interval_ms);
-//         }
-//     }
-// }
 
 /*! @}*/
 

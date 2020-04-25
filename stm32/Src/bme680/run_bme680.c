@@ -11,9 +11,8 @@ static uint32_t bme680_state_load(uint8_t *state_buffer, uint32_t n_buffer);
 static uint32_t bme680_config_load(uint8_t *config_buffer, uint32_t n_buffer);
 
 void bme680_output_ready(
-    int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temperature, float humidity,
-    float pressure, float raw_temperature, float raw_humidity, float gas, bsec_library_return_t bsec_status,
-    float static_iaq, float co2_equivalent, float breath_voc_equivalen
+    float iaq, float temperature, float humidity,
+    float pressure, float co2_equivalent, float breath_voc_equivalent
 );
 
 int8_t bme680_i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *data, uint16_t len) {
@@ -72,14 +71,13 @@ void bme680_my_loop() {
 }
 
 void bme680_output_ready(
-    int64_t timestamp, float iaq, uint8_t iaq_accuracy, float temperature, float humidity,
-    float pressure, float raw_temperature, float raw_humidity, float gas, bsec_library_return_t bsec_status,
-    float static_iaq, float co2_equivalent, float breath_voc_equivalen
+    float iaq, float temperature, float humidity,
+    float pressure, float co2_equivalent, float breath_voc_equivalent
 ) {
     measure_value.bme680.air_quality = iaq;
     measure_value.bme680.humidity = humidity;
     measure_value.bme680.pressure = pressure;
     measure_value.bme680.temperature = temperature;
-    measure_value.bme680.tvoc = breath_voc_equivalen;
+    measure_value.bme680.tvoc = breath_voc_equivalent;
     measure_value.bme680.co2 = co2_equivalent;
 }
