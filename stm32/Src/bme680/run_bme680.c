@@ -82,6 +82,4 @@ void bme680_output_ready(
     measure_value.bme680.temperature = temperature;
     measure_value.bme680.tvoc = breath_voc_equivalen;
     measure_value.bme680.co2 = co2_equivalent;
-
-    measure_value.valid.bme680 = 1;
 }

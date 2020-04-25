@@ -31,19 +31,18 @@ void setup() {
 }
 
 void deep_sleep(uint32_t seconds) {
-    RTC_TimeTypeDef rtc_time;
-    rtc_time.Hours = 0;
-    rtc_time.Minutes = 0;
-    rtc_time.Seconds = 0;
+    RTC_TimeTypeDef rtc_time = {0, 0, 0};
+    RTC_AlarmTypeDef rtc_alarm = {
+        {
+            seconds / 3600,
+            (seconds % 3600) / 60,
+            seconds % 60
+        },
+        RTC_ALARM_A
+    };
 
-    RTC_AlarmTypeDef rtc_alarm;
-    rtc_alarm.Alarm = RTC_ALARM_A;
-    rtc_alarm.AlarmTime.Hours = seconds / 3600;
-    rtc_alarm.AlarmTime.Minutes = (seconds % 3600) / 60;
-    rtc_alarm.AlarmTime.Seconds = seconds % 60;
-
-    HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
-    HAL_RTC_SetAlarm_IT(&hrtc, &rtc_alarm, RTC_FORMAT_BCD);
+    HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+    HAL_RTC_SetAlarm_IT(&hrtc, &rtc_alarm, RTC_FORMAT_BIN);
 
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
@@ -55,22 +54,30 @@ void deep_sleep(uint32_t seconds) {
 void loop() {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
-    measure_value.valid.pms5003 = 0;
-    measure_value.valid.bme680 = 0;
-    measure_value.valid.mics6814 = 0;
+    measure_value.bme680.air_quality = -1;
+    measure_value.bme680.co2 = -1;
+    measure_value.bme680.humidity = -1;
+    measure_value.bme680.pressure = -1;
+    measure_value.bme680.temperature = -1;
+    measure_value.bme680.tvoc = -1;
+    measure_value.mics6814.co = -1;
+    measure_value.mics6814.nh3 = -1;
+    measure_value.mics6814.no2 = -1;
+    measure_value.pms5003.pm1 = -1;
+    measure_value.pms5003.pm2_5 = -1;
+    measure_value.pms5003.pm10 = -1;
+    measure_value.stm32.temp = -1;
+    measure_value.stm32.vrefint = -1;
 
-    for(int i = 0; i < 3 && !measure_value.valid.pms5003; i++) {
+    for(int i = 0; i < 3 && (-1 == measure_value.pms5003.pm1); i++) {
         loop_pms5003();
     }
     loop_adc();
     bme680_my_loop();
-
     loop_print();
-
     loop_esp8266();
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
-
     deep_sleep(5);
 }
 
@@ -99,20 +106,20 @@ void loop_print() {
         "STM32   Tmp   %.4f\r\n"
         "STM32   Vref  %.4f\r\n",
 
-        measure_value.valid.pms5003 ? measure_value.pms5003.pm1 : -1,
-        measure_value.valid.pms5003 ? measure_value.pms5003.pm2_5 : -1,
-        measure_value.valid.pms5003 ? measure_value.pms5003.pm10 : -1,
+        measure_value.pms5003.pm1,
+        measure_value.pms5003.pm2_5,
+        measure_value.pms5003.pm10,
 
-        measure_value.valid.bme680 ? measure_value.bme680.temperature : -1,
-        measure_value.valid.bme680 ? measure_value.bme680.pressure : -1,
-        measure_value.valid.bme680 ? measure_value.bme680.humidity : -1,
-        measure_value.valid.bme680 ? measure_value.bme680.tvoc : -1,
-        measure_value.valid.bme680 ? measure_value.bme680.co2 : -1,
-        measure_value.valid.bme680 ? measure_value.bme680.air_quality : -1,
+        measure_value.bme680.temperature,
+        measure_value.bme680.pressure,
+        measure_value.bme680.humidity,
+        measure_value.bme680.tvoc,
+        measure_value.bme680.co2,
+        measure_value.bme680.air_quality,
 
-        measure_value.valid.mics6814 ? measure_value.mics6814.co : -1,
-        measure_value.valid.mics6814 ? measure_value.mics6814.nh3 : -1,
-        measure_value.valid.mics6814 ? measure_value.mics6814.no2 : -1,
+        measure_value.mics6814.co,
+        measure_value.mics6814.nh3,
+        measure_value.mics6814.no2,
 
         measure_value.stm32.temp,
         measure_value.stm32.vrefint

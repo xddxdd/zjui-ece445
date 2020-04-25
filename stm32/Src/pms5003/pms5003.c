@@ -31,5 +31,4 @@ void loop_pms5003() {
     measure_value.pms5003.pm1 = (((uint32_t) buf[4]) << 8) | buf[5];
     measure_value.pms5003.pm2_5 = (((uint32_t) buf[6]) << 8) | buf[7];
     measure_value.pms5003.pm10 = (((uint32_t) buf[8]) << 8) | buf[9];
-    measure_value.valid.pms5003 = 1;
 }

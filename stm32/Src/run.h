@@ -3,15 +3,6 @@
 #include <stdint.h>
 
 typedef struct {
-    union {
-        struct __attribute__((packed)) {
-            uint8_t pms5003 : 1;
-            uint8_t bme680 : 1;
-            uint8_t mics6814 : 1;
-            uint8_t __reserved : 5;
-        };
-        uint8_t raw;
-    } valid;
 
     struct {
         float temperature;
