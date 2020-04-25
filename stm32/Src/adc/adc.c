@@ -2,7 +2,6 @@
 #include "run.h"
 #include <math.h>
 
-extern ADC_HandleTypeDef hadc1;
 uint32_t adc_dma[5];
 volatile uint32_t adc_dma_finished;
 
@@ -28,9 +27,12 @@ volatile uint32_t adc_dma_finished;
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor);
 
 void loop_adc() {
+    extern ADC_HandleTypeDef hadc1;
+    
     adc_dma_finished = 0;
     HAL_ADC_Start_DMA(&hadc1, adc_dma, 5);
     while(!adc_dma_finished);
+    HAL_Delay(100);
     HAL_ADC_Stop_DMA(&hadc1);
 
     // See __LL_ADC_CALC_TEMPERATURE_TYP_PARAMS for temperature formula.
@@ -47,5 +49,5 @@ void loop_adc() {
 }
 
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor) {
-    return 1.0 * resistor * voltage / (4096 - voltage);
+    return 1.0 * resistor * (4096 - voltage) / voltage;
 }
