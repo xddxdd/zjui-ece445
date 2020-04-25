@@ -13,7 +13,7 @@ void loop_pms5003() {
         if(HAL_TIMEOUT == ret) {
             // Previous attempt timeout, so we got half data from last transmission
             // Now we can wait longer for the next transmission
-            if(HAL_OK != HAL_UART_Receive(&UART_PMS5003, buf, 32, 1000)) return;
+            if(HAL_OK != HAL_UART_Receive(&UART_PMS5003, buf, 32, 2000)) return;
         } else {
             return;
         }

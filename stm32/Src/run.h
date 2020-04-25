@@ -33,5 +33,12 @@ typedef struct {
 
 extern measure_value_t measure_value;
 
+#define HTTP_INFLUXDB_IP "192.168.0.254"
+#define HTTP_INFLUXDB_PORT 8086u
+#define HTTP_INFLUXDB_USER "***REMOVED***"
+#define HTTP_INFLUXDB_PASS "***REMOVED***"
+#define HTTP_INFLUXDB_DB "air_quality"
+
 void setup();
 void loop();
+void fail();

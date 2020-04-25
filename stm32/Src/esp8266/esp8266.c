@@ -5,7 +5,7 @@
 extern UART_HandleTypeDef huart3;
 #define UART_ESP8266 huart3
 
-#define RETRY_TIMES 3
+#define RETRY_TIMES 2
 
 #define ESP8266_WAIT_NORMAL 2000
 #define ESP8266_WAIT_NETWORK 5000
@@ -18,11 +18,6 @@ char tcp_send_buf[1024];
 uint32_t tcp_send_len;
 
 extern void print(char*);
-
-void clear_buffer_esp8266() {
-    uint8_t ch;
-    while(HAL_OK == HAL_UART_Receive(&UART_ESP8266, &ch, 1, 0));
-}
 
 uint32_t print_esp8266(char* cmd) {
     return HAL_UART_Transmit(&UART_ESP8266, (uint8_t*) cmd, strlen(cmd), 100);
@@ -45,6 +40,10 @@ uint32_t readln_esp8266(char* buf, uint32_t timeout) {
 
 uint32_t send_and_check_response(char* command, uint32_t wait) {
     for(uint8_t retry = 0; retry < RETRY_TIMES; retry++) {
+        // Clear buffer
+        uint8_t ch;
+        while(HAL_OK == HAL_UART_Receive(&UART_ESP8266, &ch, 1, 0));
+        // Send command
         print_esp8266(command);
         while(-1 != readln_esp8266(buf, wait)) {
             if(0 == strcmp("OK", buf)) return HAL_OK;
@@ -55,7 +54,6 @@ uint32_t send_and_check_response(char* command, uint32_t wait) {
 }
 
 uint32_t detect_esp8266() {
-    clear_buffer_esp8266();
     return send_and_check_response("ATE0\r\n", ESP8266_WAIT_NORMAL);
 }
 
@@ -64,17 +62,17 @@ uint32_t set_station_mode_esp8266() {
 }
 
 uint32_t connect_wifi_esp8266(char* ssid, char* password) {
-    sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", ssid, password);
+    snprintf(cmd, ESP8266_BUF_SIZE, "AT+CWJAP=\"%s\",\"%s\"\r\n", ssid, password);
     return send_and_check_response(cmd, ESP8266_WAIT_NETWORK);
 }
 
 uint32_t tcp_connect_esp8266(char* addr, uint32_t port) {
-    sprintf(cmd, "AT+CIPSTART=\"TCP\",\"%s\",%lu\r\n", addr, port);
+    snprintf(cmd, ESP8266_BUF_SIZE, "AT+CIPSTART=\"TCP\",\"%s\",%lu\r\n", addr, port);
     return send_and_check_response(cmd, ESP8266_WAIT_NETWORK);
 }
 
 uint32_t tcp_prepare_send_esp8266(uint32_t len) {
-    sprintf(cmd, "AT+CIPSEND=%ld\r\n", len);
+    snprintf(cmd, ESP8266_BUF_SIZE, "AT+CIPSEND=%ld\r\n", len);
     return send_and_check_response(cmd, ESP8266_WAIT_NORMAL);
 }
 
@@ -105,42 +103,46 @@ void loop_esp8266() {
 
     do {
         if(HAL_OK != detect_esp8266()) {
-            print("ESP8266 not detected\r\n");
+            fail();
+            //print("ESP8266 not detected\r\n");
             break;
         }
         if(HAL_OK != set_station_mode_esp8266()) {
-            print("ESP8266 cannot enter station mode\r\n");
+            fail();
+            //print("ESP8266 cannot enter station mode\r\n");
             break;
         }
         if(HAL_OK != connect_wifi_esp8266("xqm2", "98.01.20")) {
-            print("ESP8266 cannot connect to wifi\r\n");
+            fail();
+            //print("ESP8266 cannot connect to wifi\r\n");
             break;
         }
-        if(HAL_OK != tcp_connect_esp8266("192.168.0.254", 8000)) {
-            print("ESP8266 cannot create TCP connection\r\n");
+        if(HAL_OK != tcp_connect_esp8266(HTTP_INFLUXDB_IP, HTTP_INFLUXDB_PORT)) {
+            fail();
+            //print("ESP8266 cannot create TCP connection\r\n");
             break;
         }
 
         do {
             if(HAL_OK != tcp_prepare_send_esp8266(tcp_send_len)) {
-                print("ESP8266 cannot begin send data\r\n");
+                fail();
+                //print("ESP8266 cannot begin send data\r\n");
                 break;
             }
             if(HAL_OK != tcp_send_esp8266(tcp_send_buf, tcp_send_len)) {
-                print("ESP8266 cannot send data\r\n");
+                fail();
+                //print("ESP8266 cannot send data\r\n");
                 break;
             }
         } while(0);
 
-        if(HAL_OK != tcp_close_esp8266()) {
-            print("ESP8266 cannot close connection\r\n");
-            break;
-        }
+        tcp_close_esp8266();
     } while(0);
 
     if(HAL_OK != deep_sleep_esp8266()) {
-        print("ESP8266 cannot enter deep sleep\r\n");
+        fail();
+        //print("ESP8266 cannot enter deep sleep\r\n");
     }
 
-    print("ESP8266 cycle complete\r\n");
+    //print("ESP8266 cycle complete\r\n");
 }
