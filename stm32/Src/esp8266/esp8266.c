@@ -92,7 +92,7 @@ uint32_t tcp_close_esp8266() {
 }
 
 uint32_t deep_sleep_esp8266() {
-    return send_and_check_response("AT+GSLP=1000\r\n", ESP8266_WAIT_NORMAL);
+    return send_and_check_response("AT+GSLP=2147483647\r\n", ESP8266_WAIT_NORMAL);
 }
 
 void loop_esp8266() {

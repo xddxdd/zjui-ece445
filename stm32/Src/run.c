@@ -80,12 +80,12 @@ void loop_job(uint32_t do_upload) {
     measure_value.stm32.temp = -1;
     measure_value.stm32.vrefint = -1;
 
-    loop_pms5003();
+    // loop_pms5003();
     loop_adc();
-    bme680_my_loop();
+    // bme680_my_loop();
     if(do_upload) {
         loop_print();
-        loop_esp8266();
+        // loop_esp8266();
     }
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 }
@@ -112,7 +112,7 @@ void loop_print() {
         "bme680_iaq,random_id=%lu value=%.4f\n"
         "mics_co,random_id=%lu value=%.4f\n"
         "mics_nh3,random_id=%lu value=%.4f\n"
-        "mics_no2,,random_id=%lu value=%.4f\n"
+        "mics_no2,random_id=%lu value=%.4f\n"
         "stm32_tmp,random_id=%lu value=%.4f\n"
         "stm32_vref,random_id=%lu value=%.4f\n",
 
@@ -156,6 +156,7 @@ void loop_print() {
         tcp_content_len,
         tcp_content_buf
     );
+    HAL_UART_Transmit(&huart1, (uint8_t*) tcp_send_buf, tcp_send_len, 1000);
 }
 
 void fail() {

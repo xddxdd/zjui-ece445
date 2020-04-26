@@ -49,5 +49,5 @@ void loop_adc() {
 }
 
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor) {
-    return 1.0 * resistor * (4096 - voltage) / voltage;
+    return 1.0 * resistor * voltage / (4096 - voltage);
 }
