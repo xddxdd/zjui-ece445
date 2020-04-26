@@ -95,6 +95,16 @@ uint32_t deep_sleep_esp8266() {
     return send_and_check_response("AT+GSLP=2147483647\r\n", ESP8266_WAIT_NORMAL);
 }
 
+void setup_esp8266() {
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+    HAL_Delay(100);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+
+    if(HAL_OK != detect_esp8266()) fail();
+    if(HAL_OK != deep_sleep_esp8266()) fail();
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+}
+
 void loop_esp8266() {
     // Reset ESP8266 module
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
@@ -145,4 +155,5 @@ void loop_esp8266() {
     }
 
     //print("ESP8266 cycle complete\r\n");
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 }
