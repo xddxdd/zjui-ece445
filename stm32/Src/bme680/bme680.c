@@ -1344,15 +1344,16 @@ static int8_t boundary_check(uint8_t *value, uint8_t min, uint8_t max, struct bm
  */
 static int8_t null_ptr_check(const struct bme680_dev *dev)
 {
-	int8_t rslt;
+	return BME680_OK;
+	// int8_t rslt;
 
-	if ((dev == NULL) || (dev->read == NULL) || (dev->write == NULL) || (dev->delay_ms == NULL)) {
-		/* Device structure pointer is not valid */
-		rslt = BME680_E_NULL_PTR;
-	} else {
-		/* Device structure is fine */
-		rslt = BME680_OK;
-	}
+	// if ((dev == NULL) || (dev->read == NULL) || (dev->write == NULL) || (dev->delay_ms == NULL)) {
+	// 	/* Device structure pointer is not valid */
+	// 	rslt = BME680_E_NULL_PTR;
+	// } else {
+	// 	/* Device structure is fine */
+	// 	rslt = BME680_OK;
+	// }
 
-	return rslt;
+	// return rslt;
 }

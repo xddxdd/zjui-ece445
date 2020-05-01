@@ -15,6 +15,7 @@ measure_value_t measure_value;
 extern void loop_pms5003();
 extern void loop_adc();
 extern void loop_esp8266();
+extern void GPS_Process(void);
 uint32_t random_id = 0;
 
 void loop_job(uint32_t do_upload);
@@ -23,6 +24,9 @@ void deep_sleep(uint32_t seconds);
 
 void setup() {
     if(0 != bme680_my_init()) fail();
+
+    // Locate with GPS
+    GPS_Process();
 
     // Continuously run to warm up some sensors,
     // and generate random session ID with measurement uncertainty in process
