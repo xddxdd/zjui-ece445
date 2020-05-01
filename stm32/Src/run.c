@@ -16,7 +16,7 @@ extern void loop_pms5003();
 extern void loop_adc();
 extern void loop_esp8266();
 extern void GPS_Process(void);
-uint32_t random_id = 0;
+uint32_t id = 0;
 
 void loop_job(uint32_t do_upload);
 void loop_print();
@@ -34,7 +34,7 @@ void setup() {
         loop_job(0);
         uint32_t* ptr = (uint32_t*) &measure_value;
         for(int j = 0; j < sizeof(measure_value) / sizeof(uint32_t); j++) {
-            random_id ^= ptr[j];
+            id ^= ptr[j];
         }
         HAL_Delay(1000);
     }
@@ -84,12 +84,12 @@ void loop_job(uint32_t do_upload) {
     measure_value.stm32.temp = -1;
     measure_value.stm32.vrefint = -1;
 
-    // loop_pms5003();
+    loop_pms5003();
     loop_adc();
-    // bme680_my_loop();
+    bme680_my_loop();
     if(do_upload) {
         loop_print();
-        // loop_esp8266();
+        loop_esp8266();
     }
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 }
@@ -105,58 +105,51 @@ void loop_print() {
         tcp_content_buf,
         1024,
 
-        "pms5003_pm1,random_id=%lu value=%u\n"
-        "pms5003_pm2_5,random_id=%lu value=%u\n"
-        "pms5003_pm10,random_id=%lu value=%u\n"
-        "bme680_tmp,random_id=%lu value=%.4f\n"
-        "bme680_prs,random_id=%lu value=%.4f\n"
-        "bme680_hum,random_id=%lu value=%.4f\n"
-        "bme680_tvoc,random_id=%lu value=%.4f\n"
-        "bme680_co2,random_id=%lu value=%.4f\n"
-        "bme680_iaq,random_id=%lu value=%.4f\n"
-        "mics_co,random_id=%lu value=%.4f\n"
-        "mics_nh3,random_id=%lu value=%.4f\n"
-        "mics_no2,random_id=%lu value=%.4f\n"
-        "stm32_tmp,random_id=%lu value=%.4f\n"
-        "stm32_vref,random_id=%lu value=%.4f\n",
+        "pms5003_pm1,id=%lu value=%u\n"
+        "pms5003_pm2_5,id=%lu value=%u\n"
+        "pms5003_pm10,id=%lu value=%u\n"
+        "bme680_tmp,id=%lu value=%.4f\n"
+        "bme680_prs,id=%lu value=%.4f\n"
+        "bme680_hum,id=%lu value=%.4f\n"
+        "bme680_tvoc,id=%lu value=%.4f\n"
+        "bme680_co2,id=%lu value=%.4f\n"
+        "bme680_iaq,id=%lu value=%.4f\n"
+        "mics_co,id=%lu value=%.4f\n"
+        "mics_nh3,id=%lu value=%.4f\n"
+        "mics_no2,id=%lu value=%.4f\n"
+        "stm32_tmp,id=%lu value=%.4f\n"
+        "stm32_vref,id=%lu value=%.4f\n",
 
-        random_id, measure_value.pms5003.pm1,
-        random_id, measure_value.pms5003.pm2_5,
-        random_id, measure_value.pms5003.pm10,
-        random_id, measure_value.bme680.temperature,
-        random_id, measure_value.bme680.pressure,
-        random_id, measure_value.bme680.humidity,
-        random_id, measure_value.bme680.tvoc,
-        random_id, measure_value.bme680.co2,
-        random_id, measure_value.bme680.air_quality,
-        random_id, measure_value.mics6814.co,
-        random_id, measure_value.mics6814.nh3,
-        random_id, measure_value.mics6814.no2,
-        random_id, measure_value.stm32.temp,
-        random_id, measure_value.stm32.vrefint
+        id, measure_value.pms5003.pm1,
+        id, measure_value.pms5003.pm2_5,
+        id, measure_value.pms5003.pm10,
+        id, measure_value.bme680.temperature,
+        id, measure_value.bme680.pressure,
+        id, measure_value.bme680.humidity,
+        id, measure_value.bme680.tvoc,
+        id, measure_value.bme680.co2,
+        id, measure_value.bme680.air_quality,
+        id, measure_value.mics6814.co,
+        id, measure_value.mics6814.nh3,
+        id, measure_value.mics6814.no2,
+        id, measure_value.stm32.temp,
+        id, measure_value.stm32.vrefint
     );
 
     const char template[] = 
-        "POST /write?u=%s&p=%s&db=%s HTTP/1.1\r\n"
-        "Host: %s:%u\r\n"
+        "POST /write?u=" HTTP_INFLUXDB_USER "&p=" HTTP_INFLUXDB_PASS "&db=" HTTP_INFLUXDB_DB " HTTP/1.1\r\n"
+        "Host: " HTTP_INFLUXDB_IP ":" HTTP_INFLUXDB_PORT "\r\n"
         "User-Agent: zjui-ece/4.4.5\r\n"
-        "Content-Length: %lu\r\n"
         "Content-Type: application/x-www-form-urlencoded\r\n"
         "Connection: close\r\n"
+        "Content-Length: %lu\r\n"
         "\r\n"
         "%s"
     ;
     tcp_send_len = snprintf(
         tcp_send_buf,
         1024,
-        
         template,
-
-        HTTP_INFLUXDB_USER,
-        HTTP_INFLUXDB_PASS,
-        HTTP_INFLUXDB_DB,
-        HTTP_INFLUXDB_IP,
-        HTTP_INFLUXDB_PORT,
         tcp_content_len,
         tcp_content_buf
     );

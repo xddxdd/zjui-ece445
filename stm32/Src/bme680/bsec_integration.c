@@ -153,7 +153,7 @@ static bsec_library_return_t bme680_bsec_update_subscription(float sample_rate)
  * @return      zero if successful, negative otherwise
  */
 return_values_init bsec_iot_init(float sample_rate, float temperature_offset, bme680_com_fptr_t bus_write, 
-                    bme680_com_fptr_t bus_read, sleep_fct sleep, state_load_fct state_load, config_load_fct config_load)
+                    bme680_com_fptr_t bus_read, sleep_fct sleep)
 {
     return_values_init ret = {BME680_OK, BSEC_OK};
     // bsec_library_return_t bsec_status = BSEC_OK;

@@ -138,7 +138,7 @@ typedef struct{
  * @return      zero if successful, negative otherwise
  */
 return_values_init bsec_iot_init(float sample_rate, float temperature_offset, bme680_com_fptr_t bus_write, bme680_com_fptr_t bus_read, 
-    sleep_fct sleep, state_load_fct state_load, config_load_fct config_load);
+    sleep_fct sleep);
 
 /*!
  * @brief       Runs the main (endless) loop that queries sensor settings, applies them, and processes the measured data
