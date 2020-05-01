@@ -17,6 +17,7 @@ float convertDegMinToDecDeg (float degMin) {
 
 void GPS_Process(void) {
 	while(1) {
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
 		do {
 			int ret;
 			GPS.rxIndex=0;
