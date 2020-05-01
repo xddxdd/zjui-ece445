@@ -1,5 +1,7 @@
 #include "GPS.h"
 #include "main.h"
+#include "run.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +37,7 @@ void GPS_Process(void) {
 			// Format: $GPGGA,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh
 			//         $GPGGA,120558.916,5058.7457,N,00647.0514,E,2,06,1.7,109.0,M,47.6,M,1.5,0000*71
 			char latitudeNS, longitudeEW, positionFix;
+			print(str);
 			sscanf(str,"$GPGGA,%f,%f,%c,%f,%c,%c,",
 				&GPS.GPGGA.UTC_Time,
 				&GPS.GPGGA.Latitude,

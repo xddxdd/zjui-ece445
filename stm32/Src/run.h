@@ -45,3 +45,6 @@ extern measure_value_t measure_value;
 void setup();
 void loop();
 void fail();
+
+// printf.c
+void print(char* data);
