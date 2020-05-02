@@ -95,30 +95,34 @@ void loop_job(uint32_t do_upload) {
 }
 
 void loop_print() {
-    extern char tcp_send_buf[1024];
+    extern char tcp_send_buf[TCP_BUF_SIZE];
     extern uint32_t tcp_send_len;
 
-    char tcp_content_buf[1024];
+    char tcp_content_buf[TCP_BUF_SIZE];
     uint32_t tcp_content_len;
 
     tcp_content_len = snprintf(
         tcp_content_buf,
-        1024,
+        TCP_BUF_SIZE,
 
         "pms5003_pm1,id=%lu value=%u\n"
         "pms5003_pm2_5,id=%lu value=%u\n"
         "pms5003_pm10,id=%lu value=%u\n"
-        "bme680_tmp,id=%lu value=%.4f\n"
-        "bme680_prs,id=%lu value=%.4f\n"
-        "bme680_hum,id=%lu value=%.4f\n"
-        "bme680_tvoc,id=%lu value=%.4f\n"
-        "bme680_co2,id=%lu value=%.4f\n"
-        "bme680_iaq,id=%lu value=%.4f\n"
-        "mics_co,id=%lu value=%.4f\n"
-        "mics_nh3,id=%lu value=%.4f\n"
-        "mics_no2,id=%lu value=%.4f\n"
-        "stm32_tmp,id=%lu value=%.4f\n"
-        "stm32_vref,id=%lu value=%.4f\n",
+        "bme680_tmp,id=%lu value=%f\n"
+        "bme680_prs,id=%lu value=%f\n"
+        "bme680_hum,id=%lu value=%f\n"
+        "bme680_tvoc,id=%lu value=%f\n"
+        "bme680_co2,id=%lu value=%f\n"
+        "bme680_iaq,id=%lu value=%f\n"
+        "mics_co,id=%lu value=%f\n"
+        "mics_nh3,id=%lu value=%f\n"
+        "mics_no2,id=%lu value=%f\n"
+        "stm32_tmp,id=%lu value=%f\n"
+        "stm32_vref,id=%lu value=%f\n"
+        "gps_lat,id=%lu value=%s\n"
+        "gps_lon,id=%lu value=%s\n"
+        
+        ,
 
         id, measure_value.pms5003.pm1,
         id, measure_value.pms5003.pm2_5,
@@ -133,7 +137,9 @@ void loop_print() {
         id, measure_value.mics6814.nh3,
         id, measure_value.mics6814.no2,
         id, measure_value.stm32.temp,
-        id, measure_value.stm32.vrefint
+        id, measure_value.stm32.vrefint,
+        id, measure_value.gps.latitude,
+        id, measure_value.gps.longitude
     );
 
     const char template[] = 
@@ -148,12 +154,12 @@ void loop_print() {
     ;
     tcp_send_len = snprintf(
         tcp_send_buf,
-        1024,
+        TCP_BUF_SIZE,
         template,
         tcp_content_len,
         tcp_content_buf
     );
-    HAL_UART_Transmit(&huart1, (uint8_t*) tcp_send_buf, tcp_send_len, 1000);
+    // HAL_UART_Transmit(&huart1, (uint8_t*) tcp_send_buf, tcp_send_len, 1000);
 }
 
 void fail() {

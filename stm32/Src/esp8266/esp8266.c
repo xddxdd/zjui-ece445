@@ -17,7 +17,7 @@ extern UART_HandleTypeDef huart3;
 char buf[ESP8266_BUF_SIZE];
 char cmd[ESP8266_BUF_SIZE];
 
-char tcp_send_buf[1024];
+char tcp_send_buf[TCP_BUF_SIZE];
 uint32_t tcp_send_len;
 
 uint32_t print_esp8266(char* cmd) {
@@ -26,7 +26,7 @@ uint32_t print_esp8266(char* cmd) {
 
 uint32_t readln_esp8266(char* buf, uint32_t timeout) {
     if(HAL_OK != HAL_UART_Receive(&UART_ESP8266, (uint8_t*) &buf[0], 1, timeout)) return -1;
-    uint8_t i = 0;
+    uint8_t i = 1;
     while(HAL_OK == HAL_UART_Receive(&UART_ESP8266, (uint8_t*) &buf[i], 1, 10)) {
         i = (i + 1) % ESP8266_BUF_SIZE;
         if(buf[i-1] == '\n') {

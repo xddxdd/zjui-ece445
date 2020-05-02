@@ -1,4 +1,3 @@
-#include "GPS.h"
 #include "main.h"
 #include "run.h"
 
@@ -9,53 +8,106 @@
 
 // Modified from https://github.com/nimaltd/GPS
 
-extern UART_HandleTypeDef huart3;
-#define	_GPS_USART huart3
-GPS_t GPS;
+extern UART_HandleTypeDef huart1;
+#define	GPS_UART huart1
 
-float convertDegMinToDecDeg (float degMin) {
-  	return floorf(degMin / 100) + fmodf(degMin, 100) / 60;
-}
+#define GPS_BUFFER_SIZE 2048
+uint8_t rxBuffer[GPS_BUFFER_SIZE];
+uint16_t rxIndex;
+
+// float convertDegMinToDecDeg (float degMin) {
+//   	return floorf(degMin / 100) + fmodf(degMin, 100) / 60;
+// }
 
 void GPS_Process(void) {
 	while(1) {
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
 		do {
-			int ret;
-			GPS.rxIndex=0;
-			while(HAL_TIMEOUT != (ret = HAL_UART_Receive(&_GPS_USART, &GPS.rxBuffer[GPS.rxIndex], 1, 50))) {
-				GPS.rxIndex++;
+			rxIndex=0;
+			while((rxIndex < GPS_BUFFER_SIZE) && (HAL_OK == HAL_UART_Receive(&GPS_UART, &rxBuffer[rxIndex], 1, 50))) {
+				rxIndex++;
 			}
 		} while(0);
 
-		if(GPS.rxIndex>0) {
-			char* str = strstr((char*) GPS.rxBuffer,"$GPGGA,");
+		if(rxIndex > 0) {
+			char* str = strstr((char*) rxBuffer,"$GNGGA,");
 			if(str == NULL) continue;
 
 			//                   1    1    2    2    3    3    4    4    5    5    6    6    7
 			//         0    5    0    5    0    5    0    5    0    5    0    5    0    5    0
-			// Format: $GPGGA,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh
-			//         $GPGGA,120558.916,5058.7457,N,00647.0514,E,2,06,1.7,109.0,M,47.6,M,1.5,0000*71
-			char latitudeNS, longitudeEW, positionFix;
-			print(str);
-			sscanf(str,"$GPGGA,%f,%f,%c,%f,%c,%c,",
-				&GPS.GPGGA.UTC_Time,
-				&GPS.GPGGA.Latitude,
-				&latitudeNS,
-				&GPS.GPGGA.Longitude,
-				&longitudeEW,
-				&positionFix
-			);
-			if(positionFix == '0') continue;
+			// Format: $GNGGA,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh
+			//         $GNGGA,074023.000,3005.84164,N,11955.87563,E,1,13,0.9,32.3,M,0.0,M,,*46
 
-			GPS.GPGGA.Latitude=convertDegMinToDecDeg(GPS.GPGGA.Latitude);
-			GPS.GPGGA.Longitude=convertDegMinToDecDeg(GPS.GPGGA.Longitude);
+			// I don't have enough ROM space to use scanf with floating point
+			// So I send the fields as is to InfluxDB, and let it parse them
+			char positionFix;
 
-			if(latitudeNS == 'S') GPS.GPGGA.Latitude = -GPS.GPGGA.Latitude;
-			if(longitudeEW == 'W') GPS.GPGGA.Longitude = -GPS.GPGGA.Longitude;
+			do {
+				// Temp variables for parsing
+				uint32_t len;
+				char* next;
+
+				// Field 1: GNGGA, ignore
+				next = strstr(str, ",") + 1;
+				len = next - str - 1;
+				str = next;
+
+				// Field 2: UTC time, ignore
+				next = strstr(str, ",") + 1;
+				len = next - str - 1;
+				str = next;
+
+				// Field 3: Latitude
+				next = strstr(str, ",") + 1;
+				len = next - str - 1;
+				// offset by 1 to leave space for minus sign from next field
+				strncpy(measure_value.gps.latitude + 1, str, len);
+				measure_value.gps.latitude[len + 1] = '\0';
+				str = next;
+
+				// Field 4: Latitude N/S
+				next = strstr(str, ",") + 1;
+				// len = next - str - 1;
+				measure_value.gps.latitude[0] = (str[0] == 'N') ? '0' : '-';
+				str = next;
+
+				// Field 5: Longitude
+				next = strstr(str, ",") + 1;
+				len = next - str - 1;
+				// offset by 1 to leave space for minus sign from next field
+				strncpy(measure_value.gps.longitude + 1, str, len);
+				measure_value.gps.longitude[len + 1] = '\0';
+				str = next;
+
+				// Field 6: Longitude E/W
+				next = strstr(str, ",") + 1;
+				// len = next - str - 1;
+				measure_value.gps.longitude[0] = (str[0] == 'E') ? '0' : '-';
+				str = next;
 				
+				// Field 7: Fix status
+				// next = strstr(str, ",") + 1;
+				// len = next - str - 1;
+				positionFix = str[0];
+				// str = next;
+			} while(0);
+
+			// print(measure_value.gps.latitude);
+			// print(", ");
+			// print(measure_value.gps.longitude);
+			// print(", ");
+			// HAL_UART_Transmit(&huart1, (uint8_t*) &positionFix, 1, 1000);
+			// print("\r\n");
+
+			if((positionFix != '1') && (positionFix != '2')) continue;
+
+			// TODO: Extra conversion needed
+			// measure_value.gps.latitude = convertDegMinToDecDeg(measure_value.gps.latitude);
+			// measure_value.gps.longitude = convertDegMinToDecDeg(measure_value.gps.longitude);
+
 			// Done locating
 			return;
 		}
 	}
+	print("GPS Done\r\n");
 }
