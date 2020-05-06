@@ -23,9 +23,13 @@ void loop_print();
 void deep_sleep(uint32_t seconds);
 
 void setup() {
-    if(0 != bme680_my_init()) fail();
+    if(0 != bme680_my_init()) blink(6);
 
     // Locate with GPS
+    measure_value.gps.latitude[0] = '0';
+    measure_value.gps.latitude[1] = '\0';
+    measure_value.gps.longitude[0] = '0';
+    measure_value.gps.longitude[1] = '\0';
     GPS_Process();
 
     // Continuously run to warm up some sensors,
@@ -162,11 +166,12 @@ void loop_print() {
     // HAL_UART_Transmit(&huart1, (uint8_t*) tcp_send_buf, tcp_send_len, 1000);
 }
 
-void fail() {
-    for(int i = 0; i < 3; i++) {
+void blink(uint32_t times) {
+    for(int i = 0; i < times; i++) {
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
         HAL_Delay(100);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
         HAL_Delay(100);
     }
+    HAL_Delay(500);
 }

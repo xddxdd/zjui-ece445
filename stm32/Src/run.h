@@ -2,14 +2,17 @@
 
 #include <stdint.h>
 
-#define HTTP_INFLUXDB_IP    "192.168.0.254"
+#define HTTP_INFLUXDB_IP    "***REMOVED***"
 #define HTTP_INFLUXDB_PORT  "8086"
 #define HTTP_INFLUXDB_USER  "***REMOVED***"
 #define HTTP_INFLUXDB_PASS  "***REMOVED***"
 #define HTTP_INFLUXDB_DB    "air_quality"
 
-#define WIFI_SSID           "xqm2"
-#define WIFI_PASSWORD       "98.01.20"
+#define WIFI_SSID           "ZJUWLAN"
+#define WIFI_PASSWORD       ""
+
+#define ZJUWLAN_USERNAME    "***REMOVED***"
+#define ZJUWLAN_PASSWORD    "***REMOVED***"
 
 #define TCP_BUF_SIZE        2048
 #define GPS_FIELD_SIZE      32
@@ -51,7 +54,7 @@ extern measure_value_t measure_value;
 
 void setup();
 void loop();
-void fail();
+void blink(uint32_t times);
 
 // printf.c
 void print(char* data);

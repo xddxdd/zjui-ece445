@@ -10,7 +10,7 @@ extern UART_HandleTypeDef huart3;
 #define ESP8266_WAIT_NORMAL 2000
 #define ESP8266_WAIT_NETWORK 5000
 
-#define ESP8266_CMD_WIFI "AT+CWJAP=\"" WIFI_SSID "\",\"" WIFI_PASSWORD "\"\r\n"
+#define ESP8266_CMD_WIFI "AT+CWJAP_CUR=\"" WIFI_SSID "\",\"" WIFI_PASSWORD "\"\r\n"
 #define ESP8266_CMD_CONNECT "AT+CIPSTART=\"TCP\",\"" HTTP_INFLUXDB_IP "\"," HTTP_INFLUXDB_PORT "\r\n"
 
 #define ESP8266_BUF_SIZE 64
@@ -99,10 +99,47 @@ void setup_esp8266() {
     HAL_Delay(100);
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 
-    if(HAL_OK != detect_esp8266()) fail();
-    if(HAL_OK != deep_sleep_esp8266()) fail();
+    if(HAL_OK != detect_esp8266()) blink(3);
+    if(HAL_OK != deep_sleep_esp8266()) blink(3);
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 }
+
+#ifdef ZJUWLAN_USERNAME
+uint32_t zjuwlan_login() {
+    char tcp_content_buf[] = "action=login&username=" ZJUWLAN_USERNAME "&password=" ZJUWLAN_PASSWORD "&ac_id=12&ajax=1";
+    uint32_t tcp_content_len = sizeof(tcp_content_buf) - 1;
+    
+    char tcp_send_buf[TCP_BUF_SIZE];
+    uint32_t tcp_send_len;
+
+    const char template[] = 
+        "POST /include/auth_action.php HTTP/1.1\r\n"
+        "Host: 10.105.1.35:803\r\n"
+        "User-Agent: zjui-ece/4.4.5\r\n"
+        "Content-Type: application/x-www-form-urlencoded\r\n"
+        "Connection: close\r\n"
+        "Content-Length: %lu\r\n"
+        "\r\n"
+        "%s"
+    ;
+    tcp_send_len = snprintf(
+        tcp_send_buf,
+        TCP_BUF_SIZE,
+        template,
+        tcp_content_len,
+        tcp_content_buf
+    );
+
+    #define ESP8266_CMD_ZJUWLAN_LOGIN "AT+CIPSTART=\"TCP\",\"10.105.1.35\",803\r\n"
+
+    uint32_t ret;
+    if(HAL_OK != (ret = send_and_check_response(ESP8266_CMD_ZJUWLAN_LOGIN, ESP8266_WAIT_NETWORK))) return ret;
+    if(HAL_OK != (ret = tcp_prepare_send_esp8266(tcp_send_len))) return ret;
+    if(HAL_OK != (ret = tcp_send_esp8266(tcp_send_buf, tcp_send_len))) return ret;
+    tcp_close_esp8266();
+    return HAL_OK;
+}
+#endif
 
 void loop_esp8266() {
     // Reset ESP8266 module
@@ -112,29 +149,39 @@ void loop_esp8266() {
 
     do {
         if(HAL_OK != detect_esp8266()) {
-            fail();
+            blink(2);
             break;
         }
         if(HAL_OK != set_station_mode_esp8266()) {
-            fail();
+            blink(3);
             break;
         }
         if(HAL_OK != connect_wifi_esp8266()) {
-            fail();
+            blink(4);
             break;
         }
+
+        #ifdef ZJUWLAN_USERNAME
+        // ZJUWLAN login sequence
+        if(HAL_OK != zjuwlan_login()) {
+            blink(5);
+            break;
+        }
+        #endif
+
+        // InfluxDB upload sequence
         if(HAL_OK != tcp_connect_esp8266()) {
-            fail();
+            blink(6);
             break;
         }
 
         do {
             if(HAL_OK != tcp_prepare_send_esp8266(tcp_send_len)) {
-                fail();
+                blink(7);
                 break;
             }
             if(HAL_OK != tcp_send_esp8266(tcp_send_buf, tcp_send_len)) {
-                fail();
+                blink(8);
                 break;
             }
         } while(0);
@@ -143,7 +190,7 @@ void loop_esp8266() {
     } while(0);
 
     if(HAL_OK != deep_sleep_esp8266()) {
-        fail();
+        blink(9);
     }
 
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
