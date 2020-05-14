@@ -5,6 +5,10 @@ extern UART_HandleTypeDef huart2;
 #define UART_PMS5003 huart2
 
 void loop_pms5003() {
+    // Turn on PMS5003
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
+    HAL_Delay(1000);
+
     uint8_t buf[32];
     int ret;
 
@@ -27,8 +31,10 @@ void loop_pms5003() {
     uint16_t sum_expected = (((uint32_t) buf[30]) << 8) | buf[31];
     if(sum != sum_expected) return;
 
-
     measure_value.pms5003.pm1 = (((uint32_t) buf[4]) << 8) | buf[5];
     measure_value.pms5003.pm2_5 = (((uint32_t) buf[6]) << 8) | buf[7];
     measure_value.pms5003.pm10 = (((uint32_t) buf[8]) << 8) | buf[9];
+
+    // Turn off PMS5003
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
 }

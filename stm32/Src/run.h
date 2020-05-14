@@ -36,6 +36,7 @@ typedef struct {
     struct {
         float temp;
         float vrefint;
+        float vbat;
     } stm32;
 
     struct {

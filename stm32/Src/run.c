@@ -30,7 +30,7 @@ void setup() {
     measure_value.gps.latitude[1] = '\0';
     measure_value.gps.longitude[0] = '0';
     measure_value.gps.longitude[1] = '\0';
-    GPS_Process();
+    // GPS_Process();
 
     // Continuously run to warm up some sensors,
     // and generate random session ID with measurement uncertainty in process
@@ -87,13 +87,14 @@ void loop_job(uint32_t do_upload) {
     measure_value.pms5003.pm10 = -1;
     measure_value.stm32.temp = -1;
     measure_value.stm32.vrefint = -1;
+    measure_value.stm32.vbat = -1;
 
     loop_pms5003();
     loop_adc();
     bme680_my_loop();
     if(do_upload) {
         loop_print();
-        loop_esp8266();
+        // loop_esp8266();
     }
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 }
@@ -123,6 +124,7 @@ void loop_print() {
         "mics_no2,id=%lu value=%f\n"
         "stm32_tmp,id=%lu value=%f\n"
         "stm32_vref,id=%lu value=%f\n"
+        "stm32_vbat,id=%lu value=%f\n"
         "gps_lat,id=%lu value=%s\n"
         "gps_lon,id=%lu value=%s\n"
         
@@ -142,6 +144,7 @@ void loop_print() {
         id, measure_value.mics6814.no2,
         id, measure_value.stm32.temp,
         id, measure_value.stm32.vrefint,
+        id, measure_value.stm32.vbat,
         id, measure_value.gps.latitude,
         id, measure_value.gps.longitude
     );
@@ -163,7 +166,7 @@ void loop_print() {
         tcp_content_len,
         tcp_content_buf
     );
-    // HAL_UART_Transmit(&huart1, (uint8_t*) tcp_send_buf, tcp_send_len, 1000);
+    HAL_UART_Transmit(&huart1, (uint8_t*) tcp_send_buf, tcp_send_len, 1000);
 }
 
 void blink(uint32_t times) {

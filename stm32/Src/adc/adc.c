@@ -2,7 +2,9 @@
 #include "run.h"
 #include <math.h>
 
-uint32_t adc_dma[5];
+#define ADC_DMA_CHANNEL_COUNT 6
+
+uint32_t adc_dma[ADC_DMA_CHANNEL_COUNT];
 volatile uint32_t adc_dma_finished;
 
 #define RESISTOR_VALUE_CO               47000
@@ -23,21 +25,28 @@ volatile uint32_t adc_dma_finished;
 #define STM32_VREFINT_VALUE             1.20f
 #define STM32_TEMPERATURE_VOLTAGE_SLOPE 0.0043f
 #define STM32_TEMPERATURE_VOLTAGE_25C   1.43f
+#define STM32_VBAT_RESISTOR_LOW         1000
+#define STM32_VBAT_RESISTOR_HIGH        1000
 
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor);
 
 void loop_adc() {
+    // Turn on MICS6814
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+    HAL_Delay(1000);
+
     extern ADC_HandleTypeDef hadc1;
     
     adc_dma_finished = 0;
-    HAL_ADC_Start_DMA(&hadc1, adc_dma, 5);
+    HAL_ADC_Start_DMA(&hadc1, adc_dma, ADC_DMA_CHANNEL_COUNT);
     while(!adc_dma_finished);
     HAL_Delay(100);
     HAL_ADC_Stop_DMA(&hadc1);
 
     // See __LL_ADC_CALC_TEMPERATURE_TYP_PARAMS for temperature formula.
-    measure_value.stm32.vrefint = 4096.0 / adc_dma[4] * STM32_VREFINT_VALUE;
-    measure_value.stm32.temp = (STM32_TEMPERATURE_VOLTAGE_25C - adc_dma[3] * measure_value.stm32.vrefint / 4096) / STM32_TEMPERATURE_VOLTAGE_SLOPE + 25;
+    measure_value.stm32.vrefint = 4096.0 / adc_dma[5] * STM32_VREFINT_VALUE;
+    measure_value.stm32.temp = (STM32_TEMPERATURE_VOLTAGE_25C - adc_dma[4] * measure_value.stm32.vrefint / 4096) / STM32_TEMPERATURE_VOLTAGE_SLOPE + 25;
+    measure_value.stm32.vbat = (adc_dma[3] * measure_value.stm32.vrefint / 4096.0) / (STM32_VBAT_RESISTOR_LOW) * (STM32_VBAT_RESISTOR_LOW + STM32_VBAT_RESISTOR_HIGH);
 
     measure_value.mics6814.co = voltage_to_resistor_value(adc_dma[0], RESISTOR_VALUE_CO);
     measure_value.mics6814.nh3 = voltage_to_resistor_value(adc_dma[1], RESISTOR_VALUE_NH3);
@@ -46,6 +55,9 @@ void loop_adc() {
     measure_value.mics6814.co = MICS6814_1X_PPM_CO * powf(measure_value.mics6814.co / MICS6814_BASE_RESISTANCE_CO, 1.0 / MICS6814_LOG_SLOPE_CO);
     measure_value.mics6814.nh3 = MICS6814_1X_PPM_NH3 * powf(measure_value.mics6814.nh3 / MICS6814_BASE_RESISTANCE_NH3, 1.0 / MICS6814_LOG_SLOPE_NH3);
     measure_value.mics6814.no2 = MICS6814_1X_PPM_NO2 * powf(measure_value.mics6814.no2 / MICS6814_BASE_RESISTANCE_NO2, 1.0 / MICS6814_LOG_SLOPE_NO2);
+
+    // Turn on MICS6814
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 }
 
 float voltage_to_resistor_value(uint32_t voltage, uint32_t resistor) {
