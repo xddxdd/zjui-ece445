@@ -20,7 +20,11 @@ uint16_t rxIndex;
 // }
 
 void GPS_Process(void) {
-	while(1) {
+	// 30s timeout for GPS process
+	extern volatile uint32_t uwTick;
+	uint32_t timeout = uwTick + 30000;
+
+	while(uwTick < timeout) {
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
 		do {
 			rxIndex=0;
@@ -109,5 +113,4 @@ void GPS_Process(void) {
 			return;
 		}
 	}
-	print("GPS Done\r\n");
 }

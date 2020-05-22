@@ -137,33 +137,33 @@ void SystemClock_Config(void)
   {
     Error_Handler();  
   }
-  LL_RCC_HSE_Enable();
+  LL_RCC_HSI_SetCalibTrimming(16);
+  LL_RCC_HSI_Enable();
 
-   /* Wait till HSE is ready */
-  while(LL_RCC_HSE_IsReady() != 1)
+   /* Wait till HSI is ready */
+  while(LL_RCC_HSI_IsReady() != 1)
+  {
+    
+  }
+  LL_RCC_LSI_Enable();
+
+   /* Wait till LSI is ready */
+  while(LL_RCC_LSI_IsReady() != 1)
   {
     
   }
   LL_PWR_EnableBkUpAccess();
   LL_RCC_ForceBackupDomainReset();
   LL_RCC_ReleaseBackupDomainReset();
-  LL_RCC_LSE_Enable();
-
-   /* Wait till LSE is ready */
-  while(LL_RCC_LSE_IsReady() != 1)
-  {
-    
-  }
-  LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
+  LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
   LL_RCC_EnableRTC();
-  LL_RCC_HSE_EnableCSS();
   LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
   LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
   LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
-  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
+  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 
    /* Wait till System clock is ready */
-  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE)
+  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
   {
   
   }
@@ -252,7 +252,6 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_VREFINT;
   sConfig.Rank = ADC_REGULAR_RANK_6;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -493,10 +492,15 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, EN_GPS_Pin|EN_PMS5003_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  /*Configure GPIO pins : PC13 PC14 PC15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PD0 PD1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA0 PA11 PA12 PA13 
                            PA14 PA15 */
@@ -527,6 +531,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure peripheral I/O remapping */
+  __HAL_AFIO_REMAP_PD01_ENABLE();
 
 }
 
