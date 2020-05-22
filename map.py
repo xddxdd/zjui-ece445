@@ -153,13 +153,14 @@ class Map:
         interval = (max_value-min_value)/100
         color=np.arange(min_value,max_value,interval)
         plt.clf()
+        plt.figure(frameon=False)
         plt.xticks(())
         plt.yticks(())
         plt.contourf(X, Y, self.map,color,cmap="jet")
-        plt.colorbar()
+        # plt.colorbar()
         # plt.legend()
         if path != None:
-            plt.savefig(path)
+            plt.savefig(path, bbox_inches='tight', pad_inches=0)
         else:
              plt.show()
         # print(self.map.shape)
