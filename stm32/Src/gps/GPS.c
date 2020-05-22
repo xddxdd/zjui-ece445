@@ -44,6 +44,8 @@ void GPS_Process(void) {
 
 			// I don't have enough ROM space to use scanf with floating point
 			// So I send the fields as is to InfluxDB, and let it parse them
+			char latitude[GPS_FIELD_SIZE];
+			char longitude[GPS_FIELD_SIZE];
 			char positionFix;
 
 			do {
@@ -65,28 +67,28 @@ void GPS_Process(void) {
 				next = strstr(str, ",") + 1;
 				len = next - str - 1;
 				// offset by 1 to leave space for minus sign from next field
-				strncpy(measure_value.gps.latitude + 1, str, len);
-				measure_value.gps.latitude[len + 1] = '\0';
+				strncpy(latitude + 1, str, len);
+				latitude[len + 1] = '\0';
 				str = next;
 
 				// Field 4: Latitude N/S
 				next = strstr(str, ",") + 1;
 				// len = next - str - 1;
-				measure_value.gps.latitude[0] = (str[0] == 'N') ? '0' : '-';
+				latitude[0] = (str[0] == 'N') ? '0' : '-';
 				str = next;
 
 				// Field 5: Longitude
 				next = strstr(str, ",") + 1;
 				len = next - str - 1;
 				// offset by 1 to leave space for minus sign from next field
-				strncpy(measure_value.gps.longitude + 1, str, len);
-				measure_value.gps.longitude[len + 1] = '\0';
+				strncpy(longitude + 1, str, len);
+				longitude[len + 1] = '\0';
 				str = next;
 
 				// Field 6: Longitude E/W
 				next = strstr(str, ",") + 1;
 				// len = next - str - 1;
-				measure_value.gps.longitude[0] = (str[0] == 'E') ? '0' : '-';
+				longitude[0] = (str[0] == 'E') ? '0' : '-';
 				str = next;
 				
 				// Field 7: Fix status
@@ -96,9 +98,9 @@ void GPS_Process(void) {
 				// str = next;
 			} while(0);
 
-			// print(measure_value.gps.latitude);
+			// print(latitude);
 			// print(", ");
-			// print(measure_value.gps.longitude);
+			// print(longitude);
 			// print(", ");
 			// HAL_UART_Transmit(&huart1, (uint8_t*) &positionFix, 1, 1000);
 			// print("\r\n");
@@ -106,10 +108,12 @@ void GPS_Process(void) {
 			if((positionFix != '1') && (positionFix != '2')) continue;
 
 			// TODO: Extra conversion needed
-			// measure_value.gps.latitude = convertDegMinToDecDeg(measure_value.gps.latitude);
-			// measure_value.gps.longitude = convertDegMinToDecDeg(measure_value.gps.longitude);
+			// latitude = convertDegMinToDecDeg(latitude);
+			// longitude = convertDegMinToDecDeg(longitude);
 
 			// Done locating
+			memcpy(measure_value.gps.latitude, latitude, GPS_FIELD_SIZE);
+			memcpy(measure_value.gps.longitude, longitude, GPS_FIELD_SIZE);
 			return;
 		}
 	}
