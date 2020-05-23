@@ -26,6 +26,8 @@ print(gps_lon)
 result = client.query('show measurements')
 measurements = [k['name'] for k in result['measurements']]
 
+f = open('result.csv', 'w')
+f.write(', '.join(['# measurement', 'id', 'latitude', 'longitude', 'value']) + '\n')
 for measurement in measurements:
     if measurement.startswith('gps'):
         continue
@@ -49,3 +51,5 @@ for measurement in measurements:
             str(value)
         ])
         print(line)
+        f.write(line + '\n')
+f.close()

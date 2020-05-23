@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <title>Air Quality Visualization</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.css" integrity="sha256-SHMGCYmST46SoyGgo4YR/9AlK1vf3ff84Aq9yK4hdqM=" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.js" integrity="sha256-EErZamuLefUnbMBQbsEqu1USa+btR2oIlCpBJbyD4/g=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css" integrity="sha256-SHMGCYmST46SoyGgo4YR/9AlK1vf3ff84Aq9yK4hdqM=" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js" integrity="sha256-fNoRrwkP2GuYPbNSJmMJOCyfRB2DhPQe0rGTgzRsyso=" crossorigin="anonymous"></script>
     <style type="text/css">
         body {
             padding: 0;
@@ -37,10 +36,54 @@
         .leaflet-popup-content td{
             vertical-align:top;
         }
+
+        #forecast-bar {
+            position: fixed;
+            display: flex;
+            flex-wrap: wrap;
+            left: 5%;
+            right: 5%;
+            bottom: 5%;
+            /* background-color:white; */
+            z-index: 999;
+        }
+
+        #download-data {
+            width: 100px;
+            float: left;
+            background: #fff;
+            border: 1px solid #ccc;
+
+            text-decoration: none;
+            color: #000;
+            text-align: center;
+        }
+
+        #forecast-slider-wrapper {
+            flex-grow: 1;
+            margin-left: 5px;
+            display: flex;
+            vertical-align: middle;
+        }
+
+        #forecast-slider {
+            width: 100%;
+        }
+
+        #preload {
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="forecast-bar">
+        <a id="download-data" href="result.csv" target="_blank">Download Data</a>
+        <div id="forecast-slider-wrapper">
+            <input type="range" min="0" max="1000" value="0" id="forecast-slider">
+        </div>
+    </div>
+    <div id="preload"></div>
     <script>
         "use strict";
         let map = L.map("map", {
@@ -56,7 +99,7 @@
                 maxZoom: 20,
                 maxNativeZoom: 18,
                 minZoom: 3,
-	            attribution: "高德地图 AutoNavi.com",
+	            attribution: "高德地图 Amap.cn",
                 subdomains: "1234"
             }),
             '智图/街道':L.tileLayer('//map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
@@ -74,15 +117,49 @@
             zoomInTitle: '放大',
             zoomOutTitle: '缩小'
         }).addTo(map);
-        L.imageOverlay('result/initialMap.png', [
-            [30.512712248060463, 120.71961879730226],
-            [30.52385875092359, 120.7321286201477]
-        ], {
-            'opacity': 0.5
-        }).addTo(map);
         map.on('click', function(e) {
             console.log(e.latlng);
         });
+
+        let setOverlay = function(filename) {
+            if(setOverlay._lastLayer) {
+                if(setOverlay._lastLayer._url == filename) return;
+                map.removeLayer(setOverlay._lastLayer);
+            }
+            setOverlay._lastLayer = L.imageOverlay(filename, [
+                [30.512712248060463, 120.71961879730226],
+                [30.52385875092359, 120.7321286201477]
+            ], {
+                'opacity': 0.5
+            }).addTo(map);
+        };
+
+        setOverlay('result/initialMap.png');
+
+        let mapImages = [
+            'result/initialMap.png',
+            'result/map0.png',
+            'result/map1.png',
+            'result/map2.png',
+            'result/map3.png',
+            'result/map4.png',
+            'result/map5.png',
+            'result/map6.png',
+            'result/map7.png',
+            'result/map8.png',
+            'result/map9.png',
+        ];
+        mapImages.forEach(function(e) {
+            let element = document.createElement('img');
+            element.src = e;
+            document.getElementById('preload').appendChild(element);
+        })
+        document.getElementById("forecast-slider").value = 0;
+        document.getElementById("forecast-slider").oninput = function(obj) {
+            let value = (obj.target.value - obj.target.min) / obj.target.max * mapImages.length;
+            if(value > mapImages.length - 1) value = mapImages.length - 1;
+            setOverlay(mapImages[Math.floor(value)]);
+        }
     </script>
 </body>
 </html>
