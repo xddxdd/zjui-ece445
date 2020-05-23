@@ -10,7 +10,7 @@ class Map:
      input: width, in unit of cm, width of map
             height, in unit of cm, height of map
             grid, horizontal and vertical interval between the points
-            ploting_scale, scale of real distance and the distance in map
+            ploting_scale, scale of real distance and the distance in map（比例尺）
     '''
     def __init__(self, width, height, grid, ploting_scale):
         self.map = np.zeros((int(height/grid), int(width/grid)))
@@ -149,7 +149,7 @@ class Map:
             max_value = np.max(self.map)
         if min_value == None:
             min_value = np.min(self.map)
-        print(min_value, max_value)
+        # print(min_value, max_value)
         interval = (max_value-min_value)/100
         color=np.arange(min_value,max_value,interval)
         plt.clf()
@@ -197,7 +197,7 @@ class Map:
 	           # self.map[-1, :] = 1
 	           # self.map[:, 0] = 1
 	           # self.map[:, -1] = 1
-        print(self.map[70,80])
+        # print(self.map[70,80])
 
 
     '''
@@ -283,11 +283,44 @@ class Map:
                     else:
                         self.map[y,x] = old_map[0,grid_width-1]
 
+    '''
+    in gps mode, gps_mode = True, topleftPosition and bottomrightPosition
+                should be input to get the range of map
+                the file user input should be in format:longitude， latitude and value for each row
+    not in gps mode, gps_mode = false
+                the file user input should be in format: x dimension ,y dimension, value; 
+                (0,0) for bottomleft point
+    '''
+
+    def loadSampleFile(self, path, gps_mode=False, topleftPosition=None, bottomrightPosition=None):  
+        x,y,value = [],[],[]
+        with open(path,"r",encoding='UTF-8-sig') as csvfile:
+            reader = csv.reader(csvfile)
+            for line in reader:
+                x.append(float(line[0]))
+                y.append(float(line[1]))
+                value.append(float(line[2]))
+        # ret=[]
+        if not gps_mode:
+            ret = [(x[i],y[i],value[i]) for i in range(len(x))]
+        else:
+            if topleftPosition==None or bottomrightPosition==None:
+                print("no topleft position or bottomright position")
+                sys.exit(0)
+            grid_height = int(self.map_height/self.grid)
+            grid_width = int(self.map_width/self.grid)
+
+            # int((x[i] - topleftPosition[0])/(bottomrightPosition[0]-topleftPosition[0])*grid_width)
+            ret = [(int((x[i] - topleftPosition[0])/(bottomrightPosition[0]-topleftPosition[0])*grid_width),\
+                   int((y[i] - bottomrightPosition[1])/(topleftPosition[1]-bottomrightPosition[0])*grid_height),\
+                    value[i]) for i in range(len(x))]
+        return ret
 
 
 if __name__ == "__main__":
     x = Map(10,10,0.1,1000)
-    samples = [(0,0,1),(0,9,10),(9,0,10),(9,9,1),(5,5,14),(3,5,8),(7,8,18),(3,2,3),(7,4,8)]
+    # samples = [(0,0,1),(0,9,10),(9,0,10),(9,9,1),(5,5,14),(3,5,8),(7,8,18),(3,2,3),(7,4,8)]
+    samples = x.loadSampleFile("/Users/liuke/Desktop/academic/2020spring/ECE445/zjui-ece445/data.csv")
     x.addSample(samples)
     # print(x.map)
     x.fillMap()
