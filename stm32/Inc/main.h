@@ -96,6 +96,8 @@ void Error_Handler(void);
 #define USART1_TX_GPS_GPIO_Port GPIOA
 #define USART1_RX_GPS_Pin GPIO_PIN_10
 #define USART1_RX_GPS_GPIO_Port GPIOA
+#define TOGGLE_BAT_Pin GPIO_PIN_5
+#define TOGGLE_BAT_GPIO_Port GPIOB
 #define I2C1_SCL_BME680_Pin GPIO_PIN_6
 #define I2C1_SCL_BME680_GPIO_Port GPIOB
 #define I2C1_SDA_BME680_Pin GPIO_PIN_7

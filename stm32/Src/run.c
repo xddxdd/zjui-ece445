@@ -3,7 +3,7 @@
 #include "main.h"
 #include <stdio.h>
 
-// Only check MICS6814 for calibration & testing
+// Disable uploading calibration & testing
 #define TEST_MODE 0
 
 extern ADC_HandleTypeDef hadc1;
@@ -19,13 +19,16 @@ extern void loop_pms5003();
 extern void loop_adc();
 extern void loop_esp8266();
 extern void GPS_Process(void);
-uint32_t id = 4;
+uint32_t id = 2;
 
 void loop_job(uint32_t do_upload);
 void loop_print();
 void deep_sleep(uint32_t seconds);
 
 void setup() {
+    // Virtual release of key of battery module
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+
     if(0 != bme680_my_init()) blink(6);
 
     // Locate with GPS
@@ -34,23 +37,23 @@ void setup() {
     measure_value.gps.longitude[0] = '0';
     measure_value.gps.longitude[1] = '\0';
 
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
+
     // Continuously run to warm up some sensors,
     // and generate random session ID with measurement uncertainty in process (disabled for now)
     for(int i = 0; i < 5; i++) {
-        // Turn on LED
+        // Turn on LED & MICS6814 & GPS, and preheat for 30s
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-
         loop_job(0);
-        // uint32_t* ptr = (uint32_t*) &measure_value;
-        // for(int j = 0; j < sizeof(measure_value) / sizeof(uint32_t); j++) {
-        //     id ^= ptr[j];
-        // }
-
-        // Turn off LED
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 
         HAL_Delay(1000);
     }
+    // // Turn off MICS6814 & GPS
+    // // Not necessary since they will be used immediately afterwards
+    // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+    // HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
 }
 
 void deep_sleep(uint32_t seconds) {
@@ -77,22 +80,36 @@ void deep_sleep(uint32_t seconds) {
 }
 
 void loop() {
-    // Turn on LED
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-
-    // Turn on MICS6814, and preheat for 30s
+    // Turn on LED & MICS6814 & GPS
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-    deep_sleep(30);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
 
+    // Preheat MICS6814 for 30s, and give GPS 30s for scanning satellites
+    #if 0 == TEST_MODE
+        // Don't need to toggle battery module every time
+        // since MICS6814 & GPS are on and drawing lots of current
+        HAL_Delay(30000);
+    #endif
     loop_job(1);
 
-    // Turn off MICS6814
+    // Turn off LED & MICS6814 & GPS
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-    
-    // Turn off LED
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
 
-    deep_sleep(15 * 60 - 30);
+    // Wait 85 cycles of 10.5s each, total = 892.5s
+    #if 0 == TEST_MODE
+        for(size_t i = 0; i < 85; i++) {
+            // Toggle battery module each time
+            deep_sleep(10);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+            HAL_Delay(500);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+        }
+    #endif
 }
 
 void loop_job(uint32_t do_upload) {
@@ -113,12 +130,10 @@ void loop_job(uint32_t do_upload) {
     measure_value.stm32.vbat = -1;
 
     if(do_upload) {
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
         #if 0 == TEST_MODE
             GPS_Process();
             HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
         #endif
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
     }
 
     loop_pms5003();
