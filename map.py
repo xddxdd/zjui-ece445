@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as img
 import csv
+import sys
+from windrose import WindroseAxes
 
 class Map:
 
@@ -150,14 +152,14 @@ class Map:
         if min_value == None:
             min_value = np.min(self.map)
         # print(min_value, max_value)
-        interval = (max_value-min_value)/100
-        color=np.arange(min_value,max_value,interval)
+        interval = (max_value-min_value)/10
+        color=np.arange(min_value,max_value+interval,interval+1)
         plt.clf()
         plt.figure(frameon=False)
         plt.xticks(())
         plt.yticks(())
         plt.contourf(X, Y, self.map,color,cmap="jet")
-        # plt.colorbar()
+        plt.colorbar()
         # plt.legend()
         if path != None:
             plt.savefig(path, bbox_inches='tight', pad_inches=0)
@@ -316,11 +318,21 @@ class Map:
                     value[i]) for i in range(len(x))]
         return ret
 
+    def generateWindroseMap(self, ws, wd, path=None):
+        ax = WindroseAxes.from_ax()
+        ax.bar(wd, ws, normed=True, opening=0.8, edgecolor='none')
+        ax.set_legend()
+ 
+        # plt.show()
+        if path != None:
+            plt.savefig(path, bbox_inches='tight', pad_inches=0)
+
+
 
 if __name__ == "__main__":
     x = Map(10,10,0.1,1000)
     # samples = [(0,0,1),(0,9,10),(9,0,10),(9,9,1),(5,5,14),(3,5,8),(7,8,18),(3,2,3),(7,4,8)]
-    samples = x.loadSampleFile("/Users/liuke/Desktop/academic/2020spring/ECE445/zjui-ece445/data.csv")
+    samples = x.loadSampleFile("./data.csv")
     x.addSample(samples)
     # print(x.map)
     x.fillMap()
@@ -328,14 +340,22 @@ if __name__ == "__main__":
     min_value = np.min(x.map)
     x.generateMap(path='./result/initialMap.png')
     # x.writeToCsv('./mydata.csv')
+
+
+    ws = np.random.random(500) * 6
+    wd = np.random.random(500) * 360
+    x.generateWindroseMap(ws, wd, path='./result/windrose.png')
+
+
     nu = 0.02
     dt = 60
     step = 10
     # print(x.map[8,7])
-    v=5
+    windSpeed=5
+    windDirection = 330
     for i in range(step):
         x.applyDiffusion(dt,nu)
         # x.generateMap(path='./result/map'+str(i)+'.png')
-        x.applyWind(v,330,dt)
+        x.applyWind(windSpeed,windDirection,dt)
         x.generateMap(path='./result/map'+str(i)+'.png',max_value=max_value,min_value=min_value)
         # x.generateMap(path='./result/map'+str(i)+'.png')
