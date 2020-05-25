@@ -27,3 +27,5 @@ fp-info-cache
 
 stm32/build
 webpage/results
+webpage/vendor
+python/__pycache__

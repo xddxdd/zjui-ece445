@@ -151,21 +151,31 @@ class Map:
             max_value = np.max(self.map)
         if min_value == None:
             min_value = np.min(self.map)
-        # print(min_value, max_value)
+        
         interval = (max_value-min_value)/10
-        color=np.arange(min_value,max_value+interval,interval+1)
+        # print(min_value, max_value, interval)
+        # print(np.array((self.map - min_value) / interval, dtype = np.int))
+
+        color=np.arange(min_value,max_value+interval,interval)
         plt.clf()
-        plt.figure(frameon=False)
-        plt.xticks(())
-        plt.yticks(())
-        plt.contourf(X, Y, self.map,color,cmap="jet")
+
+        fig = plt.figure(frameon=False)
+        fig.set_size_inches(len(x) / len(y), 1, forward=False)
+        ax = plt.Axes(fig, [0., 0., 1., 1.])
+        ax.set_axis_off()
+        fig.add_axes(ax)
+
+        # plt.xticks(())
+        # plt.yticks(())
+        ax.contourf(X, Y, self.map,color,cmap="jet")
         # plt.colorbar()
         # plt.legend()
         if path != None:
-            plt.savefig(path, bbox_inches='tight', pad_inches=0)
+            plt.savefig(path, bbox_inches='tight', pad_inches=0, dpi = 1000)
         else:
             plt.show()
         # print(self.map.shape)
+        plt.close()
 
         # print(x.shape)
 

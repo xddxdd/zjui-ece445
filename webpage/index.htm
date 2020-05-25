@@ -14,6 +14,7 @@
         
         html, body, #map {
             height: 100%;
+            overflow:hidden;
         }
 
         .leaflet-marker-icon{
@@ -73,16 +74,13 @@
         #preload {
             z-index: -1;
             position: fixed;
-            width: 0;
-            height: 0;
-            overflow: hidden;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <div id="forecast-bar">
-        <a id="download-data" href="result.csv" target="_blank">Download Data</a>
+        <a id="download-data" href="results/all.csv" target="_blank">Download Data</a>
         <select id="data-type">
             <option value='bme680_co2'>CO2 (BME680)</option>
             <option value='bme680_hum'>Humidity (BME680)</option>
@@ -113,18 +111,18 @@
                 maxBounds: [[30.48,120.68],[30.55,120.77]],
             });
             let mapLayers = {
-                '高德/街道':L.tileLayer('//webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+                'Amap / Streets':L.tileLayer('//webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
                     maxZoom: 20,
                     maxNativeZoom: 18,
                     minZoom: 3,
-                    attribution: "高德地图 Amap.cn",
+                    attribution: "Amap.cn",
                     subdomains: "1234"
                 }),
-                '智图/街道':L.tileLayer('//map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
+                'GeoQ / Streets':L.tileLayer('//map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 20,
                     maxNativeZoom: 16,
                     minZoom: 3,
-                    attribution: "智图 GeoQ.cn"
+                    attribution: "GeoQ.cn"
                 }).addTo(map)
             }
             L.control.layers(mapLayers, {}, {
@@ -132,8 +130,8 @@
                 collapsed: true
             }).addTo(map);
             L.control.zoom({
-                zoomInTitle: '放大',
-                zoomOutTitle: '缩小'
+                zoomInTitle: 'Zoom In',
+                zoomOutTitle: 'Zoom Out'
             }).addTo(map);
             map.on('click', function(e) {
                 console.log(e.latlng);
@@ -148,7 +146,8 @@
                     [30.512, 120.719],
                     [30.524, 120.735]
                 ], {
-                    'opacity': 0.5
+                    'opacity': 0.5,
+                    'className': 'image-overlay'
                 }).addTo(map);
             };
 
@@ -162,7 +161,7 @@
                     document.getElementById('preload').innerHTML = '';
                     for(let i = 0; i < progressImages; i++) {
                         let element = document.createElement('img');
-                        element.src = 'results/_' + metric + '_' + i + '.png';
+                        element.src = 'results/' + metric + '_' + i + '.png';
                         document.getElementById('preload').appendChild(element);
                     }
                 }
@@ -170,7 +169,7 @@
                 let slider = document.getElementById("forecast-slider");
                 let progress = (slider.value - slider.min) / (slider.max - slider.min) * progressImages;
                 if(progress > progressImages - 1) progress = progressImages - 1;
-                setOverlay('results/_' + metric + '_' + Math.floor(progress) + '.png')
+                setOverlay('results/' + metric + '_' + Math.floor(progress) + '.png')
             }
 
             document.getElementById("forecast-slider").oninput = selectionUpdate;
