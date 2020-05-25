@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 // Disable uploading calibration & testing
-#define TEST_MODE 0
+#define TEST_MODE 1
 
 extern ADC_HandleTypeDef hadc1;
 extern I2C_HandleTypeDef hi2c1;
@@ -19,7 +19,7 @@ extern void loop_pms5003();
 extern void loop_adc();
 extern void loop_esp8266();
 extern void GPS_Process(void);
-uint32_t id = 2;
+uint32_t id = 10;
 
 void loop_job(uint32_t do_upload);
 void loop_print();
@@ -158,23 +158,43 @@ void loop_print() {
         tcp_content_buf,
         TCP_BUF_SIZE,
 
-        "pms5003_pm1,id=%lu value=%u\n"
-        "pms5003_pm2_5,id=%lu value=%u\n"
-        "pms5003_pm10,id=%lu value=%u\n"
-        "bme680_tmp,id=%lu value=%f\n"
-        "bme680_prs,id=%lu value=%f\n"
-        "bme680_hum,id=%lu value=%f\n"
-        "bme680_tvoc,id=%lu value=%f\n"
-        "bme680_co2,id=%lu value=%f\n"
-        "bme680_iaq,id=%lu value=%f\n"
-        "mics_co,id=%lu value=%f\n"
-        "mics_nh3,id=%lu value=%f\n"
-        "mics_no2,id=%lu value=%f\n"
-        "stm32_tmp,id=%lu value=%f\n"
-        "stm32_vref,id=%lu value=%f\n"
-        "stm32_vbat,id=%lu value=%f\n"
-        "gps_lat,id=%lu value=%s\n"
-        "gps_lon,id=%lu value=%s\n"
+        #if 0 == TEST_MODE
+            "pms5003_pm1,id=%lu value=%u\n"
+            "pms5003_pm2_5,id=%lu value=%u\n"
+            "pms5003_pm10,id=%lu value=%u\n"
+            "bme680_tmp,id=%lu value=%f\n"
+            "bme680_prs,id=%lu value=%f\n"
+            "bme680_hum,id=%lu value=%f\n"
+            "bme680_tvoc,id=%lu value=%f\n"
+            "bme680_co2,id=%lu value=%f\n"
+            "bme680_iaq,id=%lu value=%f\n"
+            "mics_co,id=%lu value=%f\n"
+            "mics_nh3,id=%lu value=%f\n"
+            "mics_no2,id=%lu value=%f\n"
+            "stm32_tmp,id=%lu value=%f\n"
+            "stm32_vref,id=%lu value=%f\n"
+            "stm32_vbat,id=%lu value=%f\n"
+            "gps_lat,id=%lu value=%s\n"
+            "gps_lon,id=%lu value=%s\n"
+        #else
+            "pms5003_pm1,id=%lu value=%u\r\n"
+            "pms5003_pm2_5,id=%lu value=%u\r\n"
+            "pms5003_pm10,id=%lu value=%u\r\n"
+            "bme680_tmp,id=%lu value=%f\r\n"
+            "bme680_prs,id=%lu value=%f\r\n"
+            "bme680_hum,id=%lu value=%f\r\n"
+            "bme680_tvoc,id=%lu value=%f\r\n"
+            "bme680_co2,id=%lu value=%f\r\n"
+            "bme680_iaq,id=%lu value=%f\r\n"
+            "mics_co,id=%lu value=%f\r\n"
+            "mics_nh3,id=%lu value=%f\r\n"
+            "mics_no2,id=%lu value=%f\r\n"
+            "stm32_tmp,id=%lu value=%f\r\n"
+            "stm32_vref,id=%lu value=%f\r\n"
+            "stm32_vbat,id=%lu value=%f\r\n"
+            "gps_lat,id=%lu value=%s\r\n"
+            "gps_lon,id=%lu value=%s\r\n"
+        #endif
         
         ,
 
@@ -196,7 +216,9 @@ void loop_print() {
         id, measure_value.gps.latitude,
         id, measure_value.gps.longitude
     );
-    HAL_UART_Transmit(&huart1, (uint8_t*) tcp_content_buf, tcp_content_len, 1000);
+    #if 1 == TEST_MODE
+        HAL_UART_Transmit(&huart1, (uint8_t*) tcp_content_buf, tcp_content_len, 1000);
+    #endif
 
     #if 0 == TEST_MODE
     extern char tcp_send_buf[TCP_BUF_SIZE];

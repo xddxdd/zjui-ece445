@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Air Quality Visualization</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <link rel="stylesheet" href="leaflet.css" integrity="sha256-SHMGCYmST46SoyGgo4YR/9AlK1vf3ff84Aq9yK4hdqM=" crossorigin="anonymous">
-    <script src="leaflet.js" integrity="sha256-fNoRrwkP2GuYPbNSJmMJOCyfRB2DhPQe0rGTgzRsyso=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="resources/leaflet.css" integrity="sha256-SHMGCYmST46SoyGgo4YR/9AlK1vf3ff84Aq9yK4hdqM=" crossorigin="anonymous">
+    <script src="resources/leaflet.js" integrity="sha256-fNoRrwkP2GuYPbNSJmMJOCyfRB2DhPQe0rGTgzRsyso=" crossorigin="anonymous"></script>
     <style type="text/css">
         body {
             padding: 0;
@@ -72,6 +72,10 @@
 
         #preload {
             z-index: -1;
+            position: fixed;
+            width: 0;
+            height: 0;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -79,6 +83,19 @@
     <div id="map"></div>
     <div id="forecast-bar">
         <a id="download-data" href="result.csv" target="_blank">Download Data</a>
+        <select id="data-type">
+            <option value='bme680_co2'>CO2 (BME680)</option>
+            <option value='bme680_hum'>Humidity (BME680)</option>
+            <option value='bme680_iaq'>Indoor Air Quality (BME680)</option>
+            <option value='bme680_prs'>Pressure (BME680)</option>
+            <option value='bme680_tmp'>Temperature (BME680)</option>
+            <option value='bme680_tvoc'>TVOC (BME680)</option>
+            <option value='mics_co'>CO (MICS6814)</option>
+            <option value='mics_no2'>NO2 (MICS6814)</option>
+            <option value='pms5003_pm1'>PM1 (PMS5003)</option>
+            <option value='pms5003_pm2_5'>PM2.5 (PMS5003)</option>
+            <option value='pms5003_pm10'>PM10 (PMS5003)</option>
+        </select>
         <div id="forecast-slider-wrapper">
             <input type="range" min="0" max="1000" value="0" id="forecast-slider">
         </div>
@@ -86,79 +103,79 @@
     <div id="preload"></div>
     <script>
         "use strict";
-        let map = L.map("map", {
-            center: [30.5186465, 120.7249815],
-            zoom: 16,
-            zoomControl: false,
-            minZoom: 15,
-            maxZoom: 20,
-            maxBounds: [[30.48,120.68],[30.55,120.77]],
-        });
-        let mapLayers = {
-            '高德/街道':L.tileLayer('//webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+        window.onload = function() {
+            let map = L.map("map", {
+                center: [30.5186465, 120.7249815],
+                zoom: 16,
+                zoomControl: false,
+                minZoom: 15,
                 maxZoom: 20,
-                maxNativeZoom: 18,
-                minZoom: 3,
-	            attribution: "高德地图 Amap.cn",
-                subdomains: "1234"
-            }),
-            '智图/街道':L.tileLayer('//map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 20,
-                maxNativeZoom: 16,
-                minZoom: 3,
-	            attribution: "智图 GeoQ.cn"
-            }).addTo(map)
-        }
-        L.control.layers(mapLayers, {}, {
-            position: 'topright',
-            collapsed: true
-        }).addTo(map);
-        L.control.zoom({
-            zoomInTitle: '放大',
-            zoomOutTitle: '缩小'
-        }).addTo(map);
-        map.on('click', function(e) {
-            console.log(e.latlng);
-        });
-
-        let setOverlay = function(filename) {
-            if(setOverlay._lastLayer) {
-                if(setOverlay._lastLayer._url == filename) return;
-                map.removeLayer(setOverlay._lastLayer);
+                maxBounds: [[30.48,120.68],[30.55,120.77]],
+            });
+            let mapLayers = {
+                '高德/街道':L.tileLayer('//webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    maxNativeZoom: 18,
+                    minZoom: 3,
+                    attribution: "高德地图 Amap.cn",
+                    subdomains: "1234"
+                }),
+                '智图/街道':L.tileLayer('//map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 20,
+                    maxNativeZoom: 16,
+                    minZoom: 3,
+                    attribution: "智图 GeoQ.cn"
+                }).addTo(map)
             }
-            setOverlay._lastLayer = L.imageOverlay(filename, [
-                [30.512712248060463, 120.71961879730226],
-                [30.52385875092359, 120.7321286201477]
-            ], {
-                'opacity': 0.5
+            L.control.layers(mapLayers, {}, {
+                position: 'topright',
+                collapsed: true
             }).addTo(map);
-        };
+            L.control.zoom({
+                zoomInTitle: '放大',
+                zoomOutTitle: '缩小'
+            }).addTo(map);
+            map.on('click', function(e) {
+                console.log(e.latlng);
+            });
 
-        setOverlay('result/initialMap.png');
+            let setOverlay = function(filename) {
+                if(setOverlay._lastLayer) {
+                    if(setOverlay._lastLayer._url == filename) return;
+                    map.removeLayer(setOverlay._lastLayer);
+                }
+                setOverlay._lastLayer = L.imageOverlay(filename, [
+                    [30.512, 120.719],
+                    [30.524, 120.735]
+                ], {
+                    'opacity': 0.5
+                }).addTo(map);
+            };
 
-        let mapImages = [
-            'result/initialMap.png',
-            'result/map0.png',
-            'result/map1.png',
-            'result/map2.png',
-            'result/map3.png',
-            'result/map4.png',
-            'result/map5.png',
-            'result/map6.png',
-            'result/map7.png',
-            'result/map8.png',
-            'result/map9.png',
-        ];
-        mapImages.forEach(function(e) {
-            let element = document.createElement('img');
-            element.src = e;
-            document.getElementById('preload').appendChild(element);
-        })
-        document.getElementById("forecast-slider").value = 0;
-        document.getElementById("forecast-slider").oninput = function(obj) {
-            let value = (obj.target.value - obj.target.min) / obj.target.max * mapImages.length;
-            if(value > mapImages.length - 1) value = mapImages.length - 1;
-            setOverlay(mapImages[Math.floor(value)]);
+            let selectionUpdate = function() {
+                let progressImages = 11;
+
+                let metric = document.getElementById("data-type").value;
+
+                if(metric != selectionUpdate.metric) {
+                    // User selected new metric, Regenerate preloaders
+                    document.getElementById('preload').innerHTML = '';
+                    for(let i = 0; i < progressImages; i++) {
+                        let element = document.createElement('img');
+                        element.src = 'results/_' + metric + '_' + i + '.png';
+                        document.getElementById('preload').appendChild(element);
+                    }
+                }
+
+                let slider = document.getElementById("forecast-slider");
+                let progress = (slider.value - slider.min) / (slider.max - slider.min) * progressImages;
+                if(progress > progressImages - 1) progress = progressImages - 1;
+                setOverlay('results/_' + metric + '_' + Math.floor(progress) + '.png')
+            }
+
+            document.getElementById("forecast-slider").oninput = selectionUpdate;
+            document.getElementById("data-type").onchange = selectionUpdate;
+            selectionUpdate();
         }
     </script>
 </body>

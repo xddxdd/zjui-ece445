@@ -159,12 +159,12 @@ class Map:
         plt.xticks(())
         plt.yticks(())
         plt.contourf(X, Y, self.map,color,cmap="jet")
-        plt.colorbar()
+        # plt.colorbar()
         # plt.legend()
         if path != None:
             plt.savefig(path, bbox_inches='tight', pad_inches=0)
         else:
-             plt.show()
+            plt.show()
         # print(self.map.shape)
 
         # print(x.shape)
@@ -302,20 +302,22 @@ class Map:
                 x.append(float(line[0]))
                 y.append(float(line[1]))
                 value.append(float(line[2]))
-        # ret=[]
+        
+        return self.preprocessSample(x, y, value, gps_mode, topleftPosition, bottomrightPosition)
+
+    def preprocessSample(self, x, y, value, gps_mode=False, topleftPosition=None, bottomrightPosition=None):  
         if not gps_mode:
             ret = [(x[i],y[i],value[i]) for i in range(len(x))]
         else:
             if topleftPosition==None or bottomrightPosition==None:
                 print("no topleft position or bottomright position")
                 sys.exit(0)
-            grid_height = int(self.map_height/self.grid)
-            grid_width = int(self.map_width/self.grid)
 
-            # int((x[i] - topleftPosition[0])/(bottomrightPosition[0]-topleftPosition[0])*grid_width)
-            ret = [(int((x[i] - topleftPosition[0])/(bottomrightPosition[0]-topleftPosition[0])*grid_width),\
-                   int((y[i] - bottomrightPosition[1])/(topleftPosition[1]-bottomrightPosition[0])*grid_height),\
-                    value[i]) for i in range(len(x))]
+            ret = [((x[i] - topleftPosition[0])/(bottomrightPosition[0]-topleftPosition[0])*self.map_width,\
+                    (y[i] - bottomrightPosition[1])/(topleftPosition[1]-bottomrightPosition[1])*self.map_height,\
+                    value[i]) for i in range(len(x))
+                    if x[i] >= topleftPosition[0] and x[i] < bottomrightPosition[0]
+                    and y[i] >= bottomrightPosition[1] and y[i] < topleftPosition[1]]
         return ret
 
     def generateWindroseMap(self, ws, wd, path=None):
@@ -326,36 +328,3 @@ class Map:
         # plt.show()
         if path != None:
             plt.savefig(path, bbox_inches='tight', pad_inches=0)
-
-
-
-if __name__ == "__main__":
-    x = Map(10,10,0.1,1000)
-    # samples = [(0,0,1),(0,9,10),(9,0,10),(9,9,1),(5,5,14),(3,5,8),(7,8,18),(3,2,3),(7,4,8)]
-    samples = x.loadSampleFile("./data.csv")
-    x.addSample(samples)
-    # print(x.map)
-    x.fillMap()
-    max_value = np.max(x.map)
-    min_value = np.min(x.map)
-    x.generateMap(path='./result/initialMap.png')
-    # x.writeToCsv('./mydata.csv')
-
-
-    ws = np.random.random(500) * 6
-    wd = np.random.random(500) * 360
-    x.generateWindroseMap(ws, wd, path='./result/windrose.png')
-
-
-    nu = 0.02
-    dt = 60
-    step = 10
-    # print(x.map[8,7])
-    windSpeed=5
-    windDirection = 330
-    for i in range(step):
-        x.applyDiffusion(dt,nu)
-        # x.generateMap(path='./result/map'+str(i)+'.png')
-        x.applyWind(windSpeed,windDirection,dt)
-        x.generateMap(path='./result/map'+str(i)+'.png',max_value=max_value,min_value=min_value)
-        # x.generateMap(path='./result/map'+str(i)+'.png')
