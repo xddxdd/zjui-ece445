@@ -140,11 +140,7 @@ class Map:
     def getConcentration(self,location):
         return self.map[int(location[0]/self.grid), int(location[1]/self.grid)]
 
-
-    def generateMap(self, path=None,max_value=None, min_value=None):
-        x = np.linspace(0,int(self.map_width),int(self.map_width/self.grid))
-        y = np.linspace(0,int(self.map_height),int(self.map_height/self.grid))
-        X, Y = np.meshgrid(x, y)
+    def getColorThreshold(self, max_value=None, min_value=None):
         if max_value == None:
             max_value = np.max(self.map)
         if min_value == None:
@@ -155,6 +151,15 @@ class Map:
         # print(np.array((self.map - min_value) / interval, dtype = np.int))
 
         color=np.arange(min_value,max_value+interval,interval)
+        return color
+
+    def generateMap(self, path=None,max_value=None, min_value=None):
+        x = np.linspace(0,int(self.map_width),int(self.map_width/self.grid))
+        y = np.linspace(0,int(self.map_height),int(self.map_height/self.grid))
+        X, Y = np.meshgrid(x, y)
+
+        color = self.getColorThreshold(max_value, min_value)
+
         plt.clf()
 
         fig = plt.figure(frameon=False)

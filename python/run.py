@@ -50,6 +50,11 @@ for measurement in db.get_enabled_measurements():
     m.fillMap()
     m.generateMap(path = '../webpage/results/{}_0.png'.format(measurement))
 
+    with open('../webpage/results/{}.json'.format(measurement), 'w') as f:
+        thresh = list(m.getColorThreshold())
+        thresh.reverse()
+        json.dump(thresh, f)
+
     max_value = np.max(m.map)
     min_value = np.min(m.map)
 
@@ -61,10 +66,6 @@ for measurement in db.get_enabled_measurements():
         m.applyWind(wind_speed,wind_direction,dt)
         m.generateMap(path='../webpage/results/{}_{}.png'.format(measurement, str(i + 1)),
             max_value=max_value,min_value=min_value)
-
-# ws = np.random.random(500) * 6
-# wd = np.random.random(500) * 360
-# x.generateWindroseMap(ws, wd, path='./webpage/result/windrose.png')
 
 print('Fetch remaining fields')
 db.get_results('stm32_vref')

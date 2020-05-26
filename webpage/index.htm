@@ -63,12 +63,44 @@
             top: 50%;
             transform: translate(-50%, -50%);
             z-index: 1000;
-            background-color: rgba(255, 255, 255, 0.5);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        #colorbar {
+            display: flex;
+            position: fixed;
+            left: 0;
+            width: 50px;
+            top: 0;
+            bottom: 0;
+            margin-top: 56px;
+            z-index: 1000;
+            flex-direction: column;
+            font-size: 12px;
+        }
+
+        #colorbar div {
+            flex-grow: 1;
+            color: #fff;
+            text-align:center;
+            overflow: hidden;
+            line-height: 1;
+            display:flex;
+            align-items: center;
+        }
+
+        #colorbar div span {
+            width: 100%;
+            text-align: center;
+        }
+
+        #map {
+            margin-left: 50px;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#">Air Quality Visualization</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -110,6 +142,18 @@
     <div id="windrose" class="d-none">
         <img src="results/windrose.png"/>
     </div>
+    <div id="colorbar">
+        <div id="colorbar-0" style="background-color: #ff2900"></div>
+        <div id="colorbar-1" style="background-color: #ff8200"></div>
+        <div id="colorbar-2" style="background-color: #ffd700"></div>
+        <div id="colorbar-3" style="background-color: #c7ff30"></div>
+        <div id="colorbar-4" style="background-color: #7aff7d"></div>
+        <div id="colorbar-5" style="background-color: #30ffc7"></div>
+        <div id="colorbar-6" style="background-color: #00c5ff"></div>
+        <div id="colorbar-7" style="background-color: #0069ff"></div>
+        <div id="colorbar-8" style="background-color: #0009ff"></div>
+        <div id="colorbar-9" style="background-color: #0000b2"></div>
+    </div>
     <div id="preload"></div>
     <script>
         "use strict";
@@ -129,13 +173,13 @@
                     minZoom: 3,
                     attribution: "Amap.cn",
                     subdomains: "1234"
-                }),
+                }).addTo(map),
                 'GeoQ / Streets':L.tileLayer('//map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 20,
                     maxNativeZoom: 16,
                     minZoom: 3,
                     attribution: "GeoQ.cn"
-                }).addTo(map)
+                })
             }
             L.control.layers(mapLayers, {}, {
                 position: 'topright',
@@ -170,13 +214,30 @@
                 let metric = document.dataType
 
                 if(metric != selectionUpdate.metric) {
-                    // User selected new metric, Regenerate preloaders
+                    // User selected new metric
+                    
+                    // Regenerate preloaders
                     document.getElementById('preload').innerHTML = '';
                     for(let i = 0; i < progressImages; i++) {
                         let element = document.createElement('img');
                         element.src = 'results/' + metric + '_' + i + '.png';
                         document.getElementById('preload').appendChild(element);
                     }
+
+                    // Reload colorbar
+                    $.getJSON('results/' + metric + '.json', function(data) {
+                        console.log(data);
+                        document.getElementById("colorbar-0").innerHTML = '<span>' + data[0].toFixed(4) + '<br/>~<br/>' + data[1].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-1").innerHTML = '<span>' + data[1].toFixed(4) + '<br/>~<br/>' + data[2].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-2").innerHTML = '<span>' + data[2].toFixed(4) + '<br/>~<br/>' + data[3].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-3").innerHTML = '<span>' + data[3].toFixed(4) + '<br/>~<br/>' + data[4].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-4").innerHTML = '<span>' + data[4].toFixed(4) + '<br/>~<br/>' + data[5].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-5").innerHTML = '<span>' + data[5].toFixed(4) + '<br/>~<br/>' + data[6].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-6").innerHTML = '<span>' + data[6].toFixed(4) + '<br/>~<br/>' + data[7].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-7").innerHTML = '<span>' + data[7].toFixed(4) + '<br/>~<br/>' + data[8].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-8").innerHTML = '<span>' + data[8].toFixed(4) + '<br/>~<br/>' + data[9].toFixed(4) + '</span>';
+                        document.getElementById("colorbar-9").innerHTML = '<span>' + data[9].toFixed(4) + '<br/>~<br/>' + data[10].toFixed(4) + '</span>';
+                    });
                 }
 
                 let slider = document.getElementById("forecast-slider");
@@ -197,9 +258,9 @@
                 'pms5003_pm1'  : 'PM1 (PMS5003)',
                 'pms5003_pm2_5': 'PM2.5 (PMS5003)',
                 'pms5003_pm10' : 'PM10 (PMS5003)',
-                'stm32_vbat'   : 'STM32 Battery Voltage',
-                'stm32_tmp'    : 'STM32 Chip Temperature',
-                'stm32_vref'   : 'STM32 3.3V Rail Voltage',
+                // 'stm32_vbat'   : 'STM32 Battery Voltage',
+                // 'stm32_tmp'    : 'STM32 Chip Temperature',
+                // 'stm32_vref'   : 'STM32 3.3V Rail Voltage',
             };
 
             let units = {
@@ -214,9 +275,9 @@
                 'pms5003_pm1'  : 'ug/m3',
                 'pms5003_pm2_5': 'ug/m3',
                 'pms5003_pm10' : 'ug/m3',
-                'stm32_vbat'   : 'V',
-                'stm32_tmp'    : '°C',
-                'stm32_vref'   : 'V',
+                // 'stm32_vbat'   : 'V',
+                // 'stm32_tmp'    : '°C',
+                // 'stm32_vref'   : 'V',
             };
 
 
