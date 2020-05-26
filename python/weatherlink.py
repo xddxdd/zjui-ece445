@@ -11,7 +11,7 @@ class Weatherlink:
     def update(self):
         try:
             timestamp = int(datetime.datetime.now().timestamp() * 1000)
-            url = 'https://www.weatherlink.com/embeddablePage/summaryData/***REMOVED***?ts=' + str(timestamp)
+            url = 'https://www.weatherlink.com/embeddablePage/summaryData/' + str(self.id) + '?ts=' + str(timestamp)
             self.result = requests.get(url).json()
 
             self.parsed_result = {}
@@ -29,10 +29,13 @@ class Weatherlink:
         return self
 
     def wind(self):
-        return (
-            float(self.parsed_result['1 Min Avg Wind Speed']), 
-            float(self.parsed_result['1 Min Scalar Avg Wind Direction']) / 22.5
-        )
+        if '1 Min Avg Wind Speed' in self.parsed_result and '1 Min Scalar Avg Wind Direction' in self.parsed_result:
+            return (
+                float(self.parsed_result['1 Min Avg Wind Speed']), 
+                float(self.parsed_result['1 Min Scalar Avg Wind Direction']) / 22.5
+            )
+        else:
+            return (0, 0)
 
 if __name__ == '__main__':
     while True:

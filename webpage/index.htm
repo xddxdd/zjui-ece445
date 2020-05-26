@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <title>Air Quality Visualization</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <link rel="stylesheet" href="resources/leaflet.css" integrity="sha256-SHMGCYmST46SoyGgo4YR/9AlK1vf3ff84Aq9yK4hdqM=" crossorigin="anonymous">
-    <script src="resources/leaflet.js" integrity="sha256-fNoRrwkP2GuYPbNSJmMJOCyfRB2DhPQe0rGTgzRsyso=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="resources/bootstrap.min.css">
+    <link rel="stylesheet" href="resources/leaflet.css">
+    <script src="resources/jquery-3.5.1.min.js"></script>
+    <script src="resources/bootstrap.bundle.min.js"></script>
+    <script src="resources/leaflet.js"></script>
     <style type="text/css">
         body {
             padding: 0;
@@ -82,12 +85,12 @@
     <div id="forecast-bar">
         <a id="download-data" href="results/all.csv" target="_blank">Download Data</a>
         <select id="data-type">
-            <option value='bme680_co2'>CO2 (BME680)</option>
+            <!--<option value='bme680_co2'>CO2 (BME680)</option>-->
             <option value='bme680_hum'>Humidity (BME680)</option>
-            <option value='bme680_iaq'>Indoor Air Quality (BME680)</option>
+            <!--<option value='bme680_iaq'>Indoor Air Quality (BME680)</option>-->
             <option value='bme680_prs'>Pressure (BME680)</option>
             <option value='bme680_tmp'>Temperature (BME680)</option>
-            <option value='bme680_tvoc'>TVOC (BME680)</option>
+            <!--<option value='bme680_tvoc'>TVOC (BME680)</option>-->
             <option value='mics_co'>CO (MICS6814)</option>
             <option value='mics_no2'>NO2 (MICS6814)</option>
             <option value='pms5003_pm1'>PM1 (PMS5003)</option>
@@ -144,7 +147,7 @@
                 }
                 setOverlay._lastLayer = L.imageOverlay(filename, [
                     [30.512, 120.719],
-                    [30.524, 120.735]
+                    [30.525, 120.735]
                 ], {
                     'opacity': 0.5,
                     'className': 'image-overlay'
@@ -175,6 +178,80 @@
             document.getElementById("forecast-slider").oninput = selectionUpdate;
             document.getElementById("data-type").onchange = selectionUpdate;
             selectionUpdate();
+
+            let metrics = {
+                // 'bme680_co2'   : 'CO2 (BME680)',
+                'bme680_hum'   : 'Humidity (BME680)',
+                // 'bme680_iaq'   : 'Indoor Air Quality (BME680)',
+                'bme680_prs'   : 'Pressure (BME680)',
+                'bme680_tmp'   : 'Temperature (BME680)',
+                // 'bme680_tvoc'  : 'TVOC (BME680)',
+                'mics_co'      : 'CO (MICS6814)',
+                'mics_no2'     : 'NO2 (MICS6814)',
+                'pms5003_pm1'  : 'PM1 (PMS5003)',
+                'pms5003_pm2_5': 'PM2.5 (PMS5003)',
+                'pms5003_pm10' : 'PM10 (PMS5003)',
+                'stm32_vbat'   : 'STM32 Battery Voltage',
+                'stm32_tmp'    : 'STM32 Chip Temperature',
+                'stm32_vref'   : 'STM32 3.3V Rail Voltage',
+                'gps_lat'      : 'GPS Latitude',
+                'gps_lon'      : 'GPS Longitude',
+            };
+
+            let units = {
+                'bme680_co2'   : 'ppm',
+                'bme680_hum'   : '%',
+                'bme680_iaq'   : '',
+                'bme680_prs'   : 'Pa',
+                'bme680_tmp'   : '°C',
+                'bme680_tvoc'  : 'ppm',
+                'mics_co'      : 'mg/m3',
+                'mics_no2'     : 'ug/m3',
+                'pms5003_pm1'  : 'ug/m3',
+                'pms5003_pm2_5': 'ug/m3',
+                'pms5003_pm10' : 'ug/m3',
+                'stm32_vbat'   : 'V',
+                'stm32_tmp'    : '°C',
+                'stm32_vref'   : 'V',
+                'gps_lat'      : '',
+                'gps_lon'      : '',
+            };
+
+
+            $.getJSON('results/all.json', function(data) {
+                L.geoJson(data, {
+                    pointToLayer: function(feature, latlng) {
+                        console.log(feature);
+
+                        let popup = "<div><table>";
+                        for(let key in metrics) {
+                            popup += "<tr><td>" + metrics[key] 
+                                  + "</td><td class='text-right'>" + parseFloat(feature.properties[key]).toFixed(4)
+                                  + "</td><td>" + units[key] + "</td></tr>";
+                        }
+                        popup += "</table></div>";
+
+                        L.circleMarker(latlng, {
+                            radius: 3,
+                            color: '#fff',
+                            opacity: 1,
+                            fill: true,
+                            weight: 2,
+                            fillColor: '#fff',
+                            fillOpacity: 1
+                        }).addTo(map);
+                        L.marker(latlng, {
+                            icon: L.divIcon({
+                                iconSize: null,
+                                html: '<div class="name"><a href="#" onclick="return false">'
+                                    + feature.properties.id
+                                    + '</a></div>'
+                            })
+                        }).bindPopup(popup).addTo(map);
+                    }
+                });
+            });
+
         }
     </script>
 </body>

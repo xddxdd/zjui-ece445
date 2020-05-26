@@ -1,7 +1,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.image as img
 import csv
 import sys
 from windrose import WindroseAxes
@@ -160,14 +159,14 @@ class Map:
         plt.clf()
 
         fig = plt.figure(frameon=False)
-        fig.set_size_inches(len(x) / len(y), 1, forward=False)
+        fig.set_size_inches(len(y) / len(x), 1, forward=False)
         ax = plt.Axes(fig, [0., 0., 1., 1.])
         ax.set_axis_off()
         fig.add_axes(ax)
 
         # plt.xticks(())
         # plt.yticks(())
-        ax.contourf(X, Y, self.map,color,cmap="jet")
+        ax.contourf(Y, X, self.map,color,cmap="jet")
         # plt.colorbar()
         # plt.legend()
         if path != None:

@@ -1,10 +1,10 @@
 from fetch import AirQualityDB
 from map import Map
-from coord_transform import wgs84_to_gcj02
 from weatherlink import Weatherlink
 import numpy as np
+import json
 
-wind_speed, wind_direction = Weatherlink().update().wind()
+wind_speed, wind_direction = Weatherlink().update().dump('weatherlink.json').wind()
 print('Wind', wind_direction, 'at', wind_speed)
 
 db = AirQualityDB()
@@ -33,12 +33,11 @@ for measurement in db.get_enabled_measurements():
     m = Map(10, 10, 0.1, 1000)
     x, y, value = [], [], []
     for measurement, id, time, lat, lon, val in data:
-        lon_transform, lat_transform = wgs84_to_gcj02(lon, lat)
-        x.append(lon_transform)
-        y.append(lat_transform)
+        x.append(lon)
+        y.append(lat)
         value.append(val)
         # print(id, lat, lon, lat_transform, lon_transform)
-    # print(x, y, value)
+    
     preprocessed_values = m.preprocessSample(x, y, value,
         gps_mode = True,
         topleftPosition = (120.719, 30.525),
@@ -64,3 +63,11 @@ for measurement in db.get_enabled_measurements():
 # ws = np.random.random(500) * 6
 # wd = np.random.random(500) * 360
 # x.generateWindroseMap(ws, wd, path='./webpage/result/windrose.png')
+
+print('Fetch remaining fields')
+db.get_results('stm32_vref')
+db.get_results('stm32_vbat')
+db.get_results('stm32_tmp')
+
+with open('../webpage/results/all.json', 'w') as f:
+    f.write(db.get_geojson())
