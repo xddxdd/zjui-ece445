@@ -41,28 +41,6 @@
             vertical-align:top;
         }
 
-        #forecast-bar {
-            position: fixed;
-            display: flex;
-            flex-wrap: wrap;
-            left: 5%;
-            right: 5%;
-            bottom: 5%;
-            /* background-color:white; */
-            z-index: 999;
-        }
-
-        #download-data {
-            width: 100px;
-            float: left;
-            background: #fff;
-            border: 1px solid #ccc;
-
-            text-decoration: none;
-            color: #000;
-            text-align: center;
-        }
-
         #forecast-slider-wrapper {
             flex-grow: 1;
             margin-left: 5px;
@@ -78,28 +56,59 @@
             z-index: -1;
             position: fixed;
         }
+
+        #windrose {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <div id="forecast-bar">
-        <a id="download-data" href="results/all.csv" target="_blank">Download Data</a>
-        <select id="data-type">
-            <!--<option value='bme680_co2'>CO2 (BME680)</option>-->
-            <option value='bme680_hum'>Humidity (BME680)</option>
-            <!--<option value='bme680_iaq'>Indoor Air Quality (BME680)</option>-->
-            <option value='bme680_prs'>Pressure (BME680)</option>
-            <option value='bme680_tmp'>Temperature (BME680)</option>
-            <!--<option value='bme680_tvoc'>TVOC (BME680)</option>-->
-            <option value='mics_co'>CO (MICS6814)</option>
-            <option value='mics_no2'>NO2 (MICS6814)</option>
-            <option value='pms5003_pm1'>PM1 (PMS5003)</option>
-            <option value='pms5003_pm2_5'>PM2.5 (PMS5003)</option>
-            <option value='pms5003_pm10'>PM10 (PMS5003)</option>
-        </select>
-        <div id="forecast-slider-wrapper">
-            <input type="range" min="0" max="1000" value="0" id="forecast-slider">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Air Quality Visualization</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+    
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Metrics
+                    </a>
+                    <div class="dropdown-menu" id="metric">
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="windrose-link">Windrose</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link disabled" href="#">|</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Forecast</a>
+                </li>
+            </ul>
+            <div id="forecast-slider-wrapper">
+                <input type="range" min="0" max="1000" value="0" id="forecast-slider">
+            </div>
+            <ul class="navbar-nav mr-auto float-right">
+                <li class="nav-item">
+                    <a class="nav-link disabled" href="#">|</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="results/all.csv" target="_blank">Download Data</a>
+                </li>
+            </ul>
         </div>
+    </nav>
+    <div id="map"></div>
+    <div id="windrose" class="d-none">
+        <img src="results/windrose.png"/>
     </div>
     <div id="preload"></div>
     <script>
@@ -136,9 +145,9 @@
                 zoomInTitle: 'Zoom In',
                 zoomOutTitle: 'Zoom Out'
             }).addTo(map);
-            map.on('click', function(e) {
-                console.log(e.latlng);
-            });
+            // map.on('click', function(e) {
+            //     console.log(e.latlng);
+            // });
 
             let setOverlay = function(filename) {
                 if(setOverlay._lastLayer) {
@@ -157,7 +166,8 @@
             let selectionUpdate = function() {
                 let progressImages = 11;
 
-                let metric = document.getElementById("data-type").value;
+                // let metric = document.getElementById("metric").value;
+                let metric = document.dataType
 
                 if(metric != selectionUpdate.metric) {
                     // User selected new metric, Regenerate preloaders
@@ -173,11 +183,7 @@
                 let progress = (slider.value - slider.min) / (slider.max - slider.min) * progressImages;
                 if(progress > progressImages - 1) progress = progressImages - 1;
                 setOverlay('results/' + metric + '_' + Math.floor(progress) + '.png')
-            }
-
-            document.getElementById("forecast-slider").oninput = selectionUpdate;
-            document.getElementById("data-type").onchange = selectionUpdate;
-            selectionUpdate();
+            };
 
             let metrics = {
                 // 'bme680_co2'   : 'CO2 (BME680)',
@@ -194,17 +200,15 @@
                 'stm32_vbat'   : 'STM32 Battery Voltage',
                 'stm32_tmp'    : 'STM32 Chip Temperature',
                 'stm32_vref'   : 'STM32 3.3V Rail Voltage',
-                'gps_lat'      : 'GPS Latitude',
-                'gps_lon'      : 'GPS Longitude',
             };
 
             let units = {
-                'bme680_co2'   : 'ppm',
+                // 'bme680_co2'   : 'ppm',
                 'bme680_hum'   : '%',
-                'bme680_iaq'   : '',
+                // 'bme680_iaq'   : '',
                 'bme680_prs'   : 'Pa',
                 'bme680_tmp'   : '°C',
-                'bme680_tvoc'  : 'ppm',
+                // 'bme680_tvoc'  : 'ppm',
                 'mics_co'      : 'mg/m3',
                 'mics_no2'     : 'ug/m3',
                 'pms5003_pm1'  : 'ug/m3',
@@ -213,15 +217,13 @@
                 'stm32_vbat'   : 'V',
                 'stm32_tmp'    : '°C',
                 'stm32_vref'   : 'V',
-                'gps_lat'      : '',
-                'gps_lon'      : '',
             };
 
 
             $.getJSON('results/all.json', function(data) {
                 L.geoJson(data, {
                     pointToLayer: function(feature, latlng) {
-                        console.log(feature);
+                        // console.log(feature);
 
                         let popup = "<div><table>";
                         for(let key in metrics) {
@@ -252,6 +254,30 @@
                 });
             });
 
+            let updateMetricsDropdown = function() {
+                let ele = document.getElementById("metric");
+                ele.innerHTML = '';
+                for(let key in metrics) {
+                    let link = document.createElement('a');
+                    link.href = '#';
+                    link.text = metrics[key];
+                    link.classList.add('dropdown-item');
+                    if(key == document.dataType) link.classList.add('active');
+                    link.onclick = function() { document.dataType = key; updateMetricsDropdown(); selectionUpdate(); };
+                    ele.appendChild(link);
+                }
+            };
+
+            document.dataType = Object.keys(metrics)[0];
+            updateMetricsDropdown();
+
+            document.getElementById("forecast-slider").oninput = selectionUpdate;
+            // document.getElementById("metric").onchange = selectionUpdate;
+            selectionUpdate();
+
+            document.getElementById('windrose-link').onclick = function() {
+                $('#windrose').toggleClass('d-none');
+            };
         }
     </script>
 </body>

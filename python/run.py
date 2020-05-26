@@ -3,6 +3,8 @@ from map import Map
 from weatherlink import Weatherlink
 import numpy as np
 import json
+import matplotlib.pyplot as plt
+from windrose import WindroseAxes
 
 wind_speed, wind_direction = Weatherlink().update().dump('weatherlink.json').wind()
 print('Wind', wind_direction, 'at', wind_speed)
@@ -71,3 +73,10 @@ db.get_results('stm32_tmp')
 
 with open('../webpage/results/all.json', 'w') as f:
     f.write(db.get_geojson())
+
+# Windrose
+wd, ws = db.get_wind()
+ax = WindroseAxes.from_ax()
+ax.bar(wd, ws, normed=True, opening=0.8, edgecolor='none')
+ax.set_legend()
+plt.savefig('../webpage/results/windrose.png', bbox_inches='tight', pad_inches=0, transparent=True)

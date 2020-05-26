@@ -1,6 +1,7 @@
 from influxdb import InfluxDBClient
 import json
 from coord_transform import wgs84_to_gcj02
+import numpy as np
 
 class AirQualityDB:
     def __init__(self):
@@ -72,6 +73,14 @@ class AirQualityDB:
             results.append([measurement, id['id'], time, lat, lon, value])
             self._add_record(id['id'], time, measurement, value)
         return results
+
+    def get_wind(self):
+        direction = self.client.query('select * from wind_direction')
+        speed = self.client.query('select * from wind_speed')
+        return (
+            [e['value'] for e in direction[('wind_direction', None)]],
+            [e['value'] for e in speed[('wind_speed', None)]]
+        )
 
     def _add_record(self, id, time, measurement, value):
         # Only allow replacing with newer records

@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import sys
-from windrose import WindroseAxes
 
 class Map:
 
@@ -328,12 +327,3 @@ class Map:
                     if x[i] >= topleftPosition[0] and x[i] < bottomrightPosition[0]
                     and y[i] >= bottomrightPosition[1] and y[i] < topleftPosition[1]]
         return ret
-
-    def generateWindroseMap(self, ws, wd, path=None):
-        ax = WindroseAxes.from_ax()
-        ax.bar(wd, ws, normed=True, opening=0.8, edgecolor='none')
-        ax.set_legend()
- 
-        # plt.show()
-        if path != None:
-            plt.savefig(path, bbox_inches='tight', pad_inches=0)
