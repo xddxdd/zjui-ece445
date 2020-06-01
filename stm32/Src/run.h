@@ -11,8 +11,8 @@
 #define WIFI_SSID           "ZJUWLAN"
 #define WIFI_PASSWORD       ""
 
-#define ZJUWLAN_USERNAME    "***REMOVED***"
-#define ZJUWLAN_PASSWORD    "***REMOVED***"
+#define ZJUWLAN_USERNAME    "your_username@intl.zju.edu.cn"
+#define ZJUWLAN_PASSWORD    "your_password"
 
 #define TCP_BUF_SIZE        2048
 #define GPS_FIELD_SIZE      32
